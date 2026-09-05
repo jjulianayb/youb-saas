@@ -146,8 +146,6 @@ select pg_temp.assert_true('two peer responses hidden',(select count(*)=0 from p
 select pg_temp.assert_true('two direct_report responses hidden',(select count(*)=0 from public.fb360_read_subject_result('a6000000-0000-0000-0000-000000000001'::uuid,:'round2_id'::uuid,'a6000000-0000-0000-0000-000000000035'::uuid) where relationship_type='direct_report'));
 
 -- Round 3: three responses allowed, comments remain hidden for peer/direct_report.
-select set_config('request.jwt.claim.sub',(select id::text from fb360_users where n=1),false);
-select public.fb360_activate_round(:'round3_id'::uuid);
 select set_config('request.jwt.claim.sub',(select id::text from fb360_users where n=8),false);
 select public.fb360_save_score(:'r3_peer1_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000021'),5::smallint,'secret1');
 select public.fb360_save_score(:'r3_peer1_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000022'),5::smallint,'secret1');
