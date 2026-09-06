@@ -158,12 +158,15 @@ select set_config('request.jwt.claim.sub',(select id::text from fb360_users wher
 select public.fb360_save_score(:'r3_peer3_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000021'),3::smallint,'secret3');
 select public.fb360_save_score(:'r3_peer3_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000022'),3::smallint,'secret3');
 select public.fb360_submit_participation(:'r3_peer3_id'::uuid);
+select set_config('request.jwt.claim.sub',(select id::text from fb360_users where n=8),false);
 select public.fb360_save_score(:'r3_direct1_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000021'),5::smallint,'direct1');
 select public.fb360_save_score(:'r3_direct1_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000022'),5::smallint,'direct1');
 select public.fb360_submit_participation(:'r3_direct1_id'::uuid);
+select set_config('request.jwt.claim.sub',(select id::text from fb360_users where n=9),false);
 select public.fb360_save_score(:'r3_direct2_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000021'),4::smallint,'direct2');
 select public.fb360_save_score(:'r3_direct2_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000022'),4::smallint,'direct2');
 select public.fb360_submit_participation(:'r3_direct2_id'::uuid);
+select set_config('request.jwt.claim.sub',(select id::text from fb360_users where n=10),false);
 select public.fb360_save_score(:'r3_direct3_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000021'),3::smallint,'direct3');
 select public.fb360_save_score(:'r3_direct3_id'::uuid,(select id from public.feedback_360_subject_competencies where round_id=:'round3_id'::uuid and subject_employee_id='a6000000-0000-0000-0000-000000000035' and competency_id='a6000000-0000-0000-0000-000000000022'),3::smallint,'direct3');
 select public.fb360_submit_participation(:'r3_direct3_id'::uuid);
