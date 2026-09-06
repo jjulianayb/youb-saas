@@ -306,7 +306,7 @@ begin
   ), ordered as (
     select points.*,lag(score) over(partition by source_type,competency_id order by completed_at,coalesce(round_id,cycle_id)) as prev from points where p_origin_filter is null or source_type=p_origin_filter
   )
-  select source_type,cycle_id,round_id,competency_id,competency_name,position_id,expected_level_snapshot,score,prev,score-prev,score-expected_level_snapshot,completed_at from ordered order by competency_name,source_type,completed_at;
+  select o.source_type,o.cycle_id,o.round_id,o.competency_id,o.competency_name,o.position_id,o.expected_level_snapshot,o.score,o.prev,o.score-o.prev,o.score-o.expected_level_snapshot,o.completed_at from ordered o order by o.competency_name,o.source_type,o.completed_at;
 end $$;
 
 revoke all on function public.fb360_set_updated_at() from public;
