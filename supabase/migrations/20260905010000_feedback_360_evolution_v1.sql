@@ -253,7 +253,7 @@ begin
   if round_status is null or round_status <> 'closed' then raise exception 'results require a closed round' using errcode='23514'; end if;
   return query
   with grouped as (
-    select sc.round_id,sc.subject_employee_id,sc.competency_id,c.name,sc.position_id_snapshot,p.relationship_type,count(*) as n,round(avg(s.score)::numeric,2) as avg_score,max(sc.expected_level_snapshot) as expected,
+    select sc.round_id,sc.subject_employee_id,sc.competency_id,c.name,sc.position_id_snapshot,p.relationship_type,count(distinct p.id) as n,round(avg(s.score)::numeric,2) as avg_score,max(sc.expected_level_snapshot) as expected,
       case when p.relationship_type in ('self','manager') then max(s.comment) else null end as safe_comment
     from public.feedback_360_subject_competencies sc
     join public.feedback_360_scores s on s.organization_id=sc.organization_id and s.subject_competency_id=sc.id and s.score is not null
