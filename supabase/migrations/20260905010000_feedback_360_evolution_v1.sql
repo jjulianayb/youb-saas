@@ -294,11 +294,11 @@ begin
   if p_origin_filter is not null and p_origin_filter not in ('assessment_v1','self','manager','peer','direct_report') then raise exception 'invalid evolution origin' using errcode='23514'; end if;
   return query
   with points as (
-    select 'assessment_v1'::text source_type,a.cycle_id::uuid,null::uuid round_id,s.competency_id,c.name,a.position_id,s.expected_level_snapshot,s.score::numeric score,a.completed_at
+    select 'assessment_v1'::text source_type,a.cycle_id::uuid,null::uuid round_id,s.competency_id,c.name as competency_name,a.position_id,s.expected_level_snapshot,s.score::numeric score,a.completed_at
     from public.assessments a join public.assessment_competency_scores s on s.organization_id=a.organization_id and s.assessment_id=a.id and s.score is not null join public.competencies c on c.organization_id=s.organization_id and c.id=s.competency_id
     where a.organization_id=p_organization_id and a.subject_employee_id=p_subject_employee_id and a.status='completed'
     union all
-    select p.relationship_type::text,r.cycle_id::uuid,r.id::uuid round_id,sc.competency_id,c.name,sc.position_id_snapshot,sc.expected_level_snapshot,avg(s.score)::numeric score,max(p.submitted_at) completed_at
+    select p.relationship_type::text,r.cycle_id::uuid,r.id::uuid round_id,sc.competency_id,c.name as competency_name,sc.position_id_snapshot,sc.expected_level_snapshot,avg(s.score)::numeric score,max(p.submitted_at) completed_at
     from public.feedback_360_rounds r join public.feedback_360_participants p on p.organization_id=r.organization_id and p.round_id=r.id and p.status='submitted' join public.feedback_360_subject_competencies sc on sc.organization_id=p.organization_id and sc.round_id=p.round_id and sc.subject_employee_id=p.subject_employee_id join public.feedback_360_scores s on s.organization_id=p.organization_id and s.participant_id=p.id and s.subject_competency_id=sc.id and s.score is not null join public.competencies c on c.organization_id=sc.organization_id and c.id=sc.competency_id
     where r.organization_id=p_organization_id and r.status='closed' and p.subject_employee_id=p_subject_employee_id
     group by p.relationship_type,r.cycle_id,r.id,sc.competency_id,c.name,sc.position_id_snapshot,sc.expected_level_snapshot
