@@ -304,7 +304,7 @@ begin
     group by p.relationship_type,r.cycle_id,r.id,sc.competency_id,c.name,sc.position_id_snapshot,sc.expected_level_snapshot
     having p.relationship_type in ('self','manager') or count(distinct p.id) >= 3
   ), ordered as (
-    select points.*,lag(score) over(partition by source_type,competency_id order by completed_at,coalesce(round_id,cycle_id)) as prev from points where p_origin_filter is null or source_type=p_origin_filter
+    select points.*,lag(points.score) over(partition by points.source_type,points.competency_id order by points.completed_at,coalesce(points.round_id,points.cycle_id)) as prev from points where p_origin_filter is null or points.source_type=p_origin_filter
   )
   select o.source_type,o.cycle_id,o.round_id,o.competency_id,o.competency_name,o.position_id,o.expected_level_snapshot,o.score,o.prev,o.score-o.prev,o.score-o.expected_level_snapshot,o.completed_at from ordered o order by o.competency_name,o.source_type,o.completed_at;
 end $$;
