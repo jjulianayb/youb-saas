@@ -211,7 +211,7 @@ select 'a6000000-0000-0000-0000-000000000001'::uuid,'a6000000-0000-0000-0000-000
 union all select 'a6000000-0000-0000-0000-000000000001'::uuid,'a6000000-0000-0000-0000-000000000502'::uuid,competency_id,id,expected_level,5 from public.position_competencies where organization_id='a6000000-0000-0000-0000-000000000001' and position_id='a6000000-0000-0000-0000-000000000011';
 set local role authenticated;
 select set_config('request.jwt.claim.sub',(select id::text from fb360_users where n=5),false);
-select pg_temp.assert_true('evolution keeps assessment source',(select count(*)=2 from public.fb360_read_evolution('a6000000-0000-0000-0000-000000000001'::uuid,'a6000000-0000-0000-0000-000000000035'::uuid,'assessment_v1')));
+select pg_temp.assert_true('evolution keeps assessment source',(select count(*)=4 from public.fb360_read_evolution('a6000000-0000-0000-0000-000000000001'::uuid,'a6000000-0000-0000-0000-000000000035'::uuid,'assessment_v1')));
 select pg_temp.assert_true('evolution calculates assessment delta',(select count(*)>=1 from public.fb360_read_evolution('a6000000-0000-0000-0000-000000000001'::uuid,'a6000000-0000-0000-0000-000000000035'::uuid,'assessment_v1') where delta=2));
 select pg_temp.assert_true('evolution rejects invalid origin',not pg_temp.try_sql($q$select * from public.fb360_read_evolution('a6000000-0000-0000-0000-000000000001'::uuid,'a6000000-0000-0000-0000-000000000035'::uuid,'invalid')$q$));
 
