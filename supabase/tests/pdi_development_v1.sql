@@ -40,6 +40,9 @@ values ('a7000000-0000-0000-0000-000000000061','a7000000-0000-0000-0000-00000000
 insert into public.assessment_competency_scores(organization_id,assessment_id,competency_id,position_competency_id,expected_level_snapshot,score)
 values ('a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000061','a7000000-0000-0000-0000-000000000041','a7000000-0000-0000-0000-000000000051',3,4);
 insert into public.feedback_360_rounds(id,organization_id,cycle_id,name,status,closed_at) values ('a7000000-0000-0000-0000-000000000071','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000021','Feedback seguro','closed','2030-01-03');
+insert into public.feedback_360_participants(id,organization_id,round_id,subject_employee_id,evaluator_employee_id,relationship_type,status,submitted_at) values ('a7000000-0000-0000-0000-000000000081','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000071','a7000000-0000-0000-0000-000000000015','a7000000-0000-0000-0000-000000000015','self','submitted','2030-01-04');
+insert into public.feedback_360_subject_competencies(id,organization_id,round_id,subject_employee_id,competency_id,position_competency_id,position_id_snapshot,expected_level_snapshot) values ('a7000000-0000-0000-0000-000000000091','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000071','a7000000-0000-0000-0000-000000000015','a7000000-0000-0000-0000-000000000041','a7000000-0000-0000-0000-000000000051','a7000000-0000-0000-0000-000000000031',3);
+insert into public.feedback_360_scores(id,organization_id,participant_id,subject_competency_id,score,comment) values ('a7000000-0000-0000-0000-0000000000a1','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000081','a7000000-0000-0000-0000-000000000091',4,'self context');
 
 create or replace function pg_temp.assert_true(label text,actual boolean) returns void language plpgsql as $$ begin if not actual then raise exception '%: expected true',label; end if; end $$;
 create or replace function pg_temp.try_sql(statement text) returns boolean language plpgsql security invoker as $$ begin begin execute statement; return true; exception when others then return false; end; end $$;
@@ -60,8 +63,9 @@ select public.pdi_add_checkin(:'created_pdi','Progress recorded','Repeat next we
 select pg_temp.assert_true('checkin append only',not pg_temp.try_sql(format('update public.pdi_checkins set progress_note=%L where id=%L','tamper',:'created_checkin')) and not pg_temp.try_sql(format('delete from public.pdi_checkins where id=%L',:'created_checkin')));
 select pg_temp.assert_true('audit append only',not pg_temp.try_sql(format('update public.pdi_audit_events set reason=%L where entity_id=%L','tamper',:'created_pdi')) and not pg_temp.try_sql(format('delete from public.pdi_audit_events where entity_id=%L',:'created_pdi')));
 select pg_temp.assert_true('assessment source link is safe',(select public.pdi_add_source_link(:'created_pdi','assessment_v1','a7000000-0000-0000-0000-000000000061'::uuid,null,null,null,'context only',4,:'created_objective') is not null));
-select pg_temp.assert_true('tampered assessment context rejected',not pg_temp.try_sql(format('select public.pdi_add_source_link(%L,%L,%L,null,null,null,%L,5,null)',:'created_pdi','assessment_v1','a7000000-0000-0000-0000-000000000061','tampered')));
+select pg_temp.assert_true('tampered assessment aggregate rejected',not pg_temp.try_sql(format('select public.pdi_add_source_link(%L,%L,%L,null,null,null,%L,5,%L)',:'created_pdi','assessment_v1','a7000000-0000-0000-0000-000000000061','tampered',:'created_objective')));
 select pg_temp.assert_true('cross tenant source rejected',not pg_temp.try_sql(format('select public.pdi_add_source_link(%L,%L,%L,null,null,null,%L,4,null)',:'created_pdi','assessment_v1','b7000000-0000-0000-0000-000000000061','cross tenant')));
+select pg_temp.assert_true('safe feedback self link is allowed',(select public.pdi_add_source_link(:'created_pdi','feedback_360',null,'a7000000-0000-0000-0000-000000000071'::uuid,'a7000000-0000-0000-0000-000000000041','self','safe self context',4,:'created_objective') is not null));
 select pg_temp.assert_true('no score automatically creates another pdi',(select count(*)=1 from public.pdis where organization_id='a7000000-0000-0000-0000-000000000001'));
 select pg_temp.assert_true('peer below threshold rejected',not pg_temp.try_sql(format('select public.pdi_add_source_link(%L,%L,null,%L,%L,%L,%L,null,null)',:'created_pdi','feedback_360','a7000000-0000-0000-0000-000000000071','a7000000-0000-0000-0000-000000000041','peer','no raw')));
 select pg_temp.assert_true('source link has no confidential columns',(select count(*)=0 from information_schema.columns where table_schema='public' and table_name='pdi_source_links' and column_name in ('participant_id','evaluator_employee_id','feedback_360_score_id','comment')));
@@ -75,6 +79,8 @@ select pg_temp.assert_true('manager activates proposed pdi',(select public.pdi_a
 select pg_temp.assert_true('invalid direct pdi lifecycle rejected',not pg_temp.try_sql(format('select public.pdi_transition(%L,%L,3,%L)',:'manager_pdi','completed','bad')));
 select public.pdi_transition(:'manager_pdi','paused',3,'conversation paused');
 select public.pdi_transition(:'manager_pdi','active',4,'conversation resumed');
+select public.pdi_transition(:'manager_pdi','cancelled',5,'human cancellation');
+select pg_temp.assert_true('terminal pdi is immutable',not pg_temp.try_sql(format('select public.pdi_transition(%L,%L,6,%L)',:'manager_pdi','active','invalid')));
 select pg_temp.assert_true('stale update rejected',not pg_temp.try_sql(format('select public.pdi_transition(%L,%L,3,%L)',:'manager_pdi','paused','stale')));
 
 -- Diretoria has no raw PDI access and only receives the safe aggregate RPC.
