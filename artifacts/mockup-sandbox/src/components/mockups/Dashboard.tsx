@@ -4,10 +4,11 @@ import type { FormEvent, ReactNode } from "react";
 import type { SupabaseSession } from "../../lib/supabase";
 import { EMPTY_UUID, employeeQueryFilters, feedbackRelationFilter, relatedQueryFilters } from "../../features/classic-dho-access";
 import CompetencyCycleAssessment from "./CompetencyCycleAssessment";
+import Feedback360Evolution from "./Feedback360Evolution";
 
 type Organization = { id: string; name: string; slug: string };
 type UserRole = "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador";
-type View = "overview" | "team" | "employee-history" | "checkins" | "competency-journey" | "cycles" | "assessments" | "feedbacks" | "pdis";
+type View = "overview" | "team" | "employee-history" | "checkins" | "competency-journey" | "feedback-360" | "cycles" | "assessments" | "feedbacks" | "pdis";
 type Employee = { id: string; full_name: string; email?: string | null; area_id?: string | null; position_id?: string | null; seniority?: "junior" | "pleno" | "senior" | null; manager_employee_id?: string | null };
 type Area = { id: string; name: string };
 type Position = { id: string; name: string; level?: string | null };
@@ -367,13 +368,14 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     { id: "employee-history", label: "Histórico individual", icon: "▤" },
     { id: "checkins", label: "Clima & check-ins", icon: "♥" },
     { id: "competency-journey", label: "Jornada V1", icon: "◆" },
+    { id: "feedback-360", label: "Feedback 360", icon: "◈" },
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
     { id: "pdis", label: "PDIs", icon: "◎" },
   ];
   const visibleNavItems = navItems.filter((item) => {
     if (!userRole || userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh") return true;
-    if (userRole === "gestor") return ["overview", "employee-history", "checkins", "competency-journey", "feedbacks", "pdis"].includes(item.id);
-    return item.id === "overview";
+    if (userRole === "gestor") return ["overview", "employee-history", "checkins", "competency-journey", "feedback-360", "feedbacks", "pdis"].includes(item.id);
+    return ["overview", "feedback-360"].includes(item.id);
   });
   const canManageStructure = userRole === "admin_youb" || userRole === "rh";
   const canManageAssessments = userRole === "admin_youb" || userRole === "rh" || userRole === "gestor";
@@ -397,6 +399,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
             {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Carregando os dados da empresa...</div> : <>
               {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
               {view === "competency-journey" && userRole && userRole !== "colaborador" && <CompetencyCycleAssessment session={session} organization={organization} role={userRole} employeeId={authenticatedEmployeeId} />}
+              {view === "feedback-360" && userRole && <Feedback360Evolution session={session} organization={organization} role={userRole} employeeId={authenticatedEmployeeId} />}
               {canManageStructure && view === "team" && <ModuleSection title="Equipe" description="Cadastre colaboradores, áreas e cargos para dar contexto aos ciclos e planos.">
                 <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
                   <form className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={saveEmployee}><h3 className="font-bold text-slate-800">Adicionar colaborador</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600 sm:col-span-2">Nome completo<input className={inputClassName} value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} placeholder="Ex.: Ana Souza" required /></label><label className="text-xs font-bold text-slate-600">E-mail<input className={inputClassName} type="email" value={employeeEmail} onChange={(event) => setEmployeeEmail(event.target.value)} placeholder="ana@empresa.com" /></label><label className="text-xs font-bold text-slate-600">Área<select className={inputClassName} value={employeeArea} onChange={(event) => setEmployeeArea(event.target.value)}><option value="">Sem área</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Cargo<select className={inputClassName} value={employeePosition} onChange={(event) => setEmployeePosition(event.target.value)}><option value="">Sem cargo</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Senioridade<select className={inputClassName} value={employeeSeniority} onChange={(event) => setEmployeeSeniority(event.target.value as "" | "junior" | "pleno" | "senior")}><option value="">Selecione</option><option value="junior">Júnior</option><option value="pleno">Pleno</option><option value="senior">Sênior</option></select></label><label className="text-xs font-bold text-slate-600 sm:col-span-2">Gestor direto<select className={inputClassName} value={employeeManager} onChange={(event) => setEmployeeManager(event.target.value)}><option value="">Sem gestor direto</option>{employees.filter((employee) => employee.id !== editingEmployee).map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select><span className="mt-1 block font-normal text-slate-500">Use este campo para montar a hierarquia do organograma.</span></label></div><div className="mt-4 flex flex-wrap gap-2"><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : editingEmployee ? "Salvar alterações" : "+ Adicionar à equipe"}</button>{editingEmployee && <button className={secondaryButtonClassName} onClick={cancelEditEmployee} type="button">Cancelar</button>}</div></form>
