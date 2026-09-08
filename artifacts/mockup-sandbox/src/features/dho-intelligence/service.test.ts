@@ -25,7 +25,7 @@ test("DHO adapter preserves provenance and rejects no-context as evolution", () 
 });
 
 test("DHO adapter does not turn incompatible history into a positive or negative evolution", () => {
-  const items = buildDhoContextItems({ organizationId: "org-a", employeeId: "emp-a", assessments: [], scores: [], evolution: [{ source_type: "assessment_v1", cycle_id: "cycle-b", competency_id: "competency-a", expected_level_snapshot: 5, position_id: "position-b", score: 5, previous_score: null, delta: null }], pdis: [], objectives: [], actions: [], checkins: [] });
+  const items = buildDhoContextItems({ organizationId: "org-a", employeeId: "emp-a", assessments: [], scores: [], evolution: [{ source_type: "assessment_v1", cycle_id: "cycle-b", competency_id: "competency-a", expected_level_snapshot: 5, position_id: "position-b", score: 5, previous_score: null, delta: null, employee_id: "emp-a" }], pdis: [], objectives: [], actions: [], checkins: [] });
   const item = items[0];
   assert.equal(item.kind, "ASSESSMENT");
   assert.match(item.summary, /não há predecessor comparável/);
