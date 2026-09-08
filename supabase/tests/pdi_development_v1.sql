@@ -39,7 +39,7 @@ insert into public.assessments(id,organization_id,cycle_id,subject_employee_id,e
 values ('a7000000-0000-0000-0000-000000000061','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000021','a7000000-0000-0000-0000-000000000015','a7000000-0000-0000-0000-000000000014','a7000000-0000-0000-0000-000000000031','completed',(select id from pdi_users where n=1),'2030-01-01','2030-01-02','{}'::jsonb);
 insert into public.assessment_competency_scores(organization_id,assessment_id,competency_id,position_competency_id,expected_level_snapshot,score)
 values ('a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000061','a7000000-0000-0000-0000-000000000041','a7000000-0000-0000-0000-000000000051',3,4);
-insert into public.feedback_360_rounds(id,organization_id,cycle_id,name,status,closed_at) values ('a7000000-0000-0000-0000-000000000071','a7000000-0000-0000-0000-000000000021','Feedback seguro','closed','2030-01-03');
+insert into public.feedback_360_rounds(id,organization_id,cycle_id,name,status,closed_at) values ('a7000000-0000-0000-0000-000000000071','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000021','Feedback seguro','closed','2030-01-03');
 
 create or replace function pg_temp.assert_true(label text,actual boolean) returns void language plpgsql as $$ begin if not actual then raise exception '%: expected true',label; end if; end $$;
 create or replace function pg_temp.try_sql(statement text) returns boolean language plpgsql security invoker as $$ begin begin execute statement; return true; exception when others then return false; end; end $$;
