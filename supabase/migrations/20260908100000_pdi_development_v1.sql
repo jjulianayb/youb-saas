@@ -163,7 +163,7 @@ alter table public.pdi_audit_events enable row level security;
 
 create or replace function public.pdi_actor_employee_id(p_organization_id uuid)
 returns uuid language sql stable security definer set search_path=public,pg_temp as $$
-  select case when count(*) = 1 then min(e.id) else null end
+  select case when count(*) = 1 then (array_agg(e.id))[1] else null end
   from public.employees e
   where e.organization_id=p_organization_id and e.auth_user_id=auth.uid() and e.status='active'
 $$;
