@@ -60,7 +60,7 @@ select public.pdi_add_checkin(:'created_pdi','Progress recorded','Repeat next we
 select pg_temp.assert_true('checkin append only',not pg_temp.try_sql(format('update public.pdi_checkins set progress_note=%L where id=%L','tamper',:'created_checkin')) and not pg_temp.try_sql(format('delete from public.pdi_checkins where id=%L',:'created_checkin')));
 select pg_temp.assert_true('audit append only',not pg_temp.try_sql(format('update public.pdi_audit_events set reason=%L where entity_id=%L','tamper',:'created_pdi')) and not pg_temp.try_sql(format('delete from public.pdi_audit_events where entity_id=%L',:'created_pdi')));
 select pg_temp.assert_true('assessment source link is safe',(select public.pdi_add_source_link(:'created_pdi','assessment_v1','a7000000-0000-0000-0000-000000000061'::uuid,null,null,null,'context only',4,:'created_objective') is not null));
-select pg_temp.assert_true('no score automatically creates another pdi',(select count(*)=2 from public.pdis where organization_id='a7000000-0000-0000-0000-000000000001'));
+select pg_temp.assert_true('no score automatically creates another pdi',(select count(*)=1 from public.pdis where organization_id='a7000000-0000-0000-0000-000000000001'));
 select pg_temp.assert_true('peer below threshold rejected',not pg_temp.try_sql(format('select public.pdi_add_source_link(%L,%L,null,%L,%L,%L,%L,null,null)',:'created_pdi','feedback_360','a7000000-0000-0000-0000-000000000071','a7000000-0000-0000-0000-000000000041','peer','no raw')));
 select pg_temp.assert_true('source link has no confidential columns',(select count(*)=0 from information_schema.columns where table_schema='public' and table_name='pdi_source_links' and column_name in ('participant_id','evaluator_employee_id','feedback_360_score_id','comment')));
 
