@@ -34,6 +34,7 @@ values ('a7000000-0000-0000-0000-000000000051','a7000000-0000-0000-0000-00000000
 insert into public.positions(id,organization_id,name,level) values ('a7000000-0000-0000-0000-000000000031','a7000000-0000-0000-0000-000000000001','PDI Position','senior');
 insert into public.competencies(id,organization_id,name,description) values ('a7000000-0000-0000-0000-000000000041','a7000000-0000-0000-0000-000000000001','PDI Competency','Context only');
 insert into public.position_competencies(id,organization_id,position_id,competency_id,expected_level) values ('a7000000-0000-0000-0000-000000000051','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000031','a7000000-0000-0000-0000-000000000041',3);
+update public.employees set position_id='a7000000-0000-0000-0000-000000000031' where id='a7000000-0000-0000-0000-000000000015';
 insert into public.assessments(id,organization_id,cycle_id,subject_employee_id,evaluator_employee_id,position_id,status,created_by_user_id,submitted_at,completed_at,scores)
 values ('a7000000-0000-0000-0000-000000000061','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000021','a7000000-0000-0000-0000-000000000015','a7000000-0000-0000-0000-000000000014','a7000000-0000-0000-0000-000000000031','completed',(select id from pdi_users where n=1),'2030-01-01','2030-01-02','{}'::jsonb);
 insert into public.assessment_competency_scores(organization_id,assessment_id,competency_id,position_competency_id,expected_level_snapshot,score)
