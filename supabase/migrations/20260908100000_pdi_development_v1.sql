@@ -240,6 +240,7 @@ revoke insert,update,delete on public.pdis,public.pdi_objectives,public.pdi_acti
 revoke all on public.pdi_audit_events from authenticated;
 revoke all on function public.pdi_actor_employee_id(uuid),public.pdi_can_read_raw(uuid,uuid),public.pdi_can_manage(uuid,uuid),public.pdi_is_operator(uuid,uuid),public.pdi_set_updated_at(),public.pdi_audit_immutable(),public.pdi_append_audit(uuid,text,uuid,text,text,jsonb,jsonb) from public;
 grant select on public.pdis,public.pdi_objectives,public.pdi_actions,public.pdi_checkins,public.pdi_source_links to authenticated;
+grant execute on function public.pdi_can_read_raw(uuid,uuid) to authenticated;
 
 create or replace function public.pdi_create(p_organization_id uuid,p_employee_id uuid,p_objective text,p_due_date date default null)
 returns uuid language plpgsql security definer set search_path=public,pg_temp as $$
