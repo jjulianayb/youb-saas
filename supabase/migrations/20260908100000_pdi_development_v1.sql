@@ -128,7 +128,7 @@ create table if not exists public.pdi_source_links (
   constraint pdi_source_links_subject_same_org_fkey foreign key (organization_id,source_subject_employee_id) references public.employees(organization_id,id) on delete restrict,
   constraint pdi_source_links_competency_same_org_fkey foreign key (organization_id,competency_id) references public.competencies(organization_id,id) on delete restrict,
   constraint pdi_source_links_source_shape_check check (
-    (source_kind = 'assessment_v1' and source_assessment_id is not null and source_round_id is null and relationship_type is null)
+    (source_kind = 'assessment_v1' and source_assessment_id is not null and source_round_id is null and competency_id is not null and relationship_type is null)
     or (source_kind = 'feedback_360' and source_round_id is not null and source_assessment_id is null and source_subject_employee_id is not null and competency_id is not null and relationship_type is not null)
     or (source_kind = 'manual' and source_assessment_id is null and source_round_id is null)
   )
@@ -187,6 +187,12 @@ returns boolean language sql stable security definer set search_path=public,pg_t
   select public.pdi_can_manage(p_organization_id,p_employee_id)
 $$;
 
+create or replace function public.pdi_can_control_lifecycle(p_organization_id uuid,p_employee_id uuid)
+returns boolean language sql stable security definer set search_path=public,pg_temp as $$
+  select public.has_org_role(p_organization_id,array['admin_youb','rh'])
+    or (public.has_org_role(p_organization_id,array['gestor']) and public.classic_is_direct_report(p_organization_id,p_employee_id))
+$$;
+
 create or replace function public.pdi_set_updated_at()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin new.updated_at=now(); return new; end $$;
@@ -238,7 +244,7 @@ create policy pdi_audit_events_select_population on public.pdi_audit_events for 
 
 revoke insert,update,delete on public.pdis,public.pdi_objectives,public.pdi_actions,public.pdi_checkins,public.pdi_source_links,public.pdi_audit_events from authenticated;
 revoke all on public.pdi_audit_events from authenticated;
-revoke all on function public.pdi_actor_employee_id(uuid),public.pdi_can_read_raw(uuid,uuid),public.pdi_can_manage(uuid,uuid),public.pdi_is_operator(uuid,uuid),public.pdi_set_updated_at(),public.pdi_audit_immutable(),public.pdi_append_audit(uuid,text,uuid,text,text,jsonb,jsonb) from public;
+revoke all on function public.pdi_actor_employee_id(uuid),public.pdi_can_read_raw(uuid,uuid),public.pdi_can_manage(uuid,uuid),public.pdi_is_operator(uuid,uuid),public.pdi_can_control_lifecycle(uuid,uuid),public.pdi_set_updated_at(),public.pdi_audit_immutable(),public.pdi_append_audit(uuid,text,uuid,text,text,jsonb,jsonb) from public;
 grant select on public.pdis,public.pdi_objectives,public.pdi_actions,public.pdi_checkins,public.pdi_source_links to authenticated;
 grant execute on function public.pdi_can_read_raw(uuid,uuid) to authenticated;
 
@@ -283,7 +289,7 @@ returns boolean language plpgsql security definer set search_path=public,pg_temp
 declare v_p public.pdis%rowtype; v_event text;
 begin
   select * into v_p from public.pdis where id=p_pdi_id for update;
-  if v_p.id is null or not public.pdi_can_manage(v_p.organization_id,v_p.employee_id) then raise exception 'pdi is outside the authorized population' using errcode='42501'; end if;
+  if v_p.id is null or not public.pdi_can_control_lifecycle(v_p.organization_id,v_p.employee_id) then raise exception 'pdi lifecycle is outside the authorized population' using errcode='42501'; end if;
   if v_p.version <> p_expected_version then raise exception 'pdi version is stale' using errcode='40001'; end if;
   if (v_p.status='active' and p_next_status='paused') then v_event='paused';
   elsif (v_p.status='paused' and p_next_status='active') then v_event='resumed';
@@ -389,8 +395,8 @@ begin
   select * into v_p from public.pdis where id=p_pdi_id;
   if v_p.id is null or not public.pdi_can_manage(v_p.organization_id,v_p.employee_id) or v_p.status in ('completed','cancelled') then raise exception 'source link is outside the authorized population' using errcode='42501'; end if;
   if p_source_kind='assessment_v1' then
-    if p_source_assessment_id is null or p_source_round_id is not null or p_relationship_type is not null then raise exception 'invalid assessment source link shape' using errcode='23514'; end if;
-    select a.subject_employee_id,a.position_id,s.expected_level_snapshot,s.score::numeric into v_subject,v_position,v_expected,v_assessment_score from public.assessments a join public.assessment_competency_scores s on s.organization_id=a.organization_id and s.assessment_id=a.id where a.organization_id=v_p.organization_id and a.id=p_source_assessment_id and a.subject_employee_id=v_p.employee_id and a.status='completed' limit 1;
+    if p_source_assessment_id is null or p_source_round_id is not null or p_competency_id is null or p_relationship_type is not null then raise exception 'invalid assessment source link shape' using errcode='23514'; end if;
+    select a.subject_employee_id,a.position_id,s.expected_level_snapshot,s.score::numeric into v_subject,v_position,v_expected,v_assessment_score from public.assessments a join public.assessment_competency_scores s on s.organization_id=a.organization_id and s.assessment_id=a.id and s.competency_id=p_competency_id where a.organization_id=v_p.organization_id and a.id=p_source_assessment_id and a.subject_employee_id=v_p.employee_id and a.status='completed';
     if v_subject is null then raise exception 'assessment source is invalid or outside the pdi population' using errcode='42501'; end if;
     if p_safe_aggregate_score is not null and round(p_safe_aggregate_score,2) <> round(v_assessment_score,2) then raise exception 'assessment source value does not match the authorized context' using errcode='23514'; end if;
     p_safe_aggregate_score := coalesce(p_safe_aggregate_score,v_assessment_score);
@@ -410,19 +416,38 @@ begin
   perform public.pdi_append_audit(v_p.organization_id,'source_link',v_id,'source_link_created'); return v_id;
 end $$;
 
+drop function if exists public.pdi_read_organization_aggregate(uuid);
 create or replace function public.pdi_read_organization_aggregate(p_organization_id uuid)
-returns table(metric text,value bigint) language plpgsql stable security definer set search_path=public,pg_temp as $$
-declare v_subjects bigint; v_plans bigint;
+returns table(metric text,status text,value bigint) language plpgsql stable security definer set search_path=public,pg_temp as $$
 begin
   if auth.uid() is null or not public.has_org_role(p_organization_id,array['admin_youb','rh','diretoria']) then raise exception 'pdi aggregate is not authorized' using errcode='42501'; end if;
-  select count(distinct employee_id),count(*) into v_subjects,v_plans from public.pdis where organization_id=p_organization_id;
-  if v_subjects < 5 or v_plans < 5 then return; end if;
-  return query select 'active_plans'::text,count(*)::bigint from public.pdis where organization_id=p_organization_id and status='active';
-  return query select 'objectives_by_status'::text,count(*)::bigint from public.pdi_objectives where organization_id=p_organization_id;
-  return query select 'actions_by_status'::text,count(*)::bigint from public.pdi_actions where organization_id=p_organization_id;
-  return query select 'blocked_actions'::text,count(*)::bigint from public.pdi_actions where organization_id=p_organization_id and status='blocked';
-  return query select 'checkin_cadence'::text,count(*)::bigint from public.pdi_checkins where organization_id=p_organization_id;
-  return query select 'completed_objectives'::text,count(*)::bigint from public.pdi_objectives where organization_id=p_organization_id and status='completed';
+  return query
+  with cells(metric,status,value,subject_count,plan_count) as (
+    select 'active_plans'::text,'active'::text,count(*)::bigint,count(distinct p.employee_id),count(*)::bigint
+    from public.pdis p where p.organization_id=p_organization_id and p.status='active'
+    group by p.status
+    union all
+    select 'objectives_by_status'::text,o.status,count(*)::bigint,count(distinct p.employee_id),count(distinct p.id)::bigint
+    from public.pdi_objectives o join public.pdis p on p.organization_id=o.organization_id and p.id=o.pdi_id
+    where o.organization_id=p_organization_id group by o.status
+    union all
+    select 'actions_by_status'::text,a.status,count(*)::bigint,count(distinct p.employee_id),count(distinct p.id)::bigint
+    from public.pdi_actions a join public.pdi_objectives o on o.organization_id=a.organization_id and o.id=a.objective_id join public.pdis p on p.organization_id=o.organization_id and p.id=o.pdi_id
+    where a.organization_id=p_organization_id group by a.status
+    union all
+    select 'blocked_actions'::text,'blocked'::text,count(*)::bigint,count(distinct p.employee_id),count(distinct p.id)::bigint
+    from public.pdi_actions a join public.pdi_objectives o on o.organization_id=a.organization_id and o.id=a.objective_id join public.pdis p on p.organization_id=o.organization_id and p.id=o.pdi_id
+    where a.organization_id=p_organization_id and a.status='blocked'
+    union all
+    select 'checkin_cadence'::text,to_char(date_trunc('month',c.checkin_at),'YYYY-MM'),count(*)::bigint,count(distinct p.employee_id),count(distinct p.id)::bigint
+    from public.pdi_checkins c join public.pdis p on p.organization_id=c.organization_id and p.id=c.pdi_id
+    where c.organization_id=p_organization_id group by date_trunc('month',c.checkin_at)
+    union all
+    select 'completed_objectives'::text,'completed'::text,count(*)::bigint,count(distinct p.employee_id),count(distinct p.id)::bigint
+    from public.pdi_objectives o join public.pdis p on p.organization_id=o.organization_id and p.id=o.pdi_id
+    where o.organization_id=p_organization_id and o.status='completed'
+  )
+  select c.metric,c.status,c.value from cells c where c.subject_count >= 5 and c.plan_count >= 5 order by c.metric,c.status;
 end $$;
 
 revoke all on function public.pdi_create(uuid,uuid,text,date),public.pdi_propose(uuid,bigint),public.pdi_activate(uuid,bigint),public.pdi_transition(uuid,text,bigint,text),public.pdi_add_objective(uuid,text,text,text,uuid,date),public.pdi_set_objective_status(uuid,text,bigint,text),public.pdi_add_action(uuid,text,text,uuid,date),public.pdi_set_action_status(uuid,text,bigint,text,text),public.pdi_add_checkin(uuid,text,text,text,text,uuid,uuid),public.pdi_add_source_link(uuid,text,uuid,uuid,uuid,text,text,numeric,uuid),public.pdi_read_organization_aggregate(uuid) from public;
