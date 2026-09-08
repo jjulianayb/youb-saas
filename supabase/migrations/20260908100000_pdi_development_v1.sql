@@ -290,7 +290,10 @@ begin
   elsif (v_p.status='active' and p_next_status='completed') then v_event='completed';
   elsif (v_p.status='active' and p_next_status='cancelled') then v_event='cancelled';
   else raise exception 'invalid pdi lifecycle transition' using errcode='23514'; end if;
-  if p_next_status='completed' and not exists(select 1 from public.pdi_objectives o where o.organization_id=v_p.organization_id and o.pdi_id=v_p.id and o.status not in ('completed','cancelled')) then null; elsif p_next_status='completed' then raise exception 'all pdi objectives must be resolved before completion' using errcode='23514'; end if;
+  if p_next_status='completed' then
+    if not exists(select 1 from public.pdi_objectives o where o.organization_id=v_p.organization_id and o.pdi_id=v_p.id) then raise exception 'pdi completion requires at least one objective' using errcode='23514'; end if;
+    if exists(select 1 from public.pdi_objectives o where o.organization_id=v_p.organization_id and o.pdi_id=v_p.id and o.status not in ('completed','cancelled')) then raise exception 'all pdi objectives must be resolved before completion' using errcode='23514'; end if;
+  end if;
   update public.pdis set status=p_next_status,
     paused_by_user_id=case when p_next_status='paused' then auth.uid() else paused_by_user_id end,
     paused_at=case when p_next_status='paused' then now() else paused_at end,
