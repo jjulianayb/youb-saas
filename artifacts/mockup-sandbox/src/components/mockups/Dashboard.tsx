@@ -5,6 +5,7 @@ import type { SupabaseSession } from "../../lib/supabase";
 import { EMPTY_UUID, employeeQueryFilters, feedbackRelationFilter, relatedQueryFilters } from "../../features/classic-dho-access";
 import CompetencyCycleAssessment from "./CompetencyCycleAssessment";
 import Feedback360Evolution from "./Feedback360Evolution";
+import { pdiRpc } from "../../features/pdi-development/service";
 
 type Organization = { id: string; name: string; slug: string };
 type UserRole = "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador";
@@ -14,7 +15,7 @@ type Area = { id: string; name: string };
 type Position = { id: string; name: string; level?: string | null };
 type Cycle = { id: string; name: string; starts_at?: string | null; ends_at?: string | null; status: string };
 type Feedback = { id: string; content: string; visibility: string; created_at: string; target_employee_id: string; author_employee_id?: string | null; };
-type Pdi = { id: string; objective: string; status: string; due_date?: string | null; employee_id: string; created_at?: string | null };
+type Pdi = { id: string; objective: string; status: string; due_date?: string | null; employee_id: string; created_at?: string | null; version?: number | null };
 type Assessment = { id: string; subject_employee_id: string; cycle_id: string; created_at: string };
 type DisciplinaryPolicy = { id: string; name: string; description?: string | null; requires_intermediate_approval: boolean; intermediate_approver_label?: string | null; requires_hr_approval: boolean; active: boolean; sequence_order: number };
 type DisciplinaryAction = { id: string; employee_id: string; policy_id?: string | null; action_type: string; reason: string; notes?: string | null; approval_status: "approved" | "pending_intermediate" | "pending_rh" | "rejected"; applied_at: string; created_at: string };
@@ -70,7 +71,7 @@ function formatDate(value?: string | null): string {
 }
 
 function statusLabel(status: string): string {
-  return ({ draft: "Rascunho", active: "Ativo", closed: "Encerrado", completed: "Concluído", cancelled: "Cancelado" } as Record<string, string>)[status] ?? status;
+  return ({ draft: "Rascunho", proposed: "Em proposta", active: "Ativo", paused: "Pausado", closed: "Encerrado", completed: "Concluído", cancelled: "Cancelado" } as Record<string, string>)[status] ?? status;
 }
 
 function approvalStatusLabel(status: string): string {
@@ -175,7 +176,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
         apiRequest<Position[]>(session, `positions?select=id,name,level&organization_id=eq.${org}&order=name`),
         apiRequest<Cycle[]>(session, `cycles?select=id,name,starts_at,ends_at,status&organization_id=eq.${org}&order=created_at.desc`),
         apiRequest<Feedback[]>(session, `feedbacks?select=id,content,visibility,created_at,target_employee_id,author_employee_id&organization_id=eq.${org}${feedbackScope ? `&${feedbackScope}` : ""}&order=created_at.desc`),
-        apiRequest<Pdi[]>(session, `pdis?select=id,objective,status,due_date,employee_id,created_at&organization_id=eq.${org}${sensitiveScope ? `&${sensitiveScope}` : ""}&order=created_at.desc`),
+        apiRequest<Pdi[]>(session, `pdis?select=id,objective,status,due_date,employee_id,created_at,version&organization_id=eq.${org}${sensitiveScope ? `&${sensitiveScope}` : ""}&order=created_at.desc`),
         apiRequest<Assessment[]>(session, `assessments?select=id,subject_employee_id,cycle_id,created_at&organization_id=eq.${org}${assessmentScope ? `&${assessmentScope}` : ""}&order=created_at.desc`),
         apiRequest<DisciplinaryAction[]>(session, `disciplinary_actions?select=id,employee_id,policy_id,action_type,reason,notes,approval_status,applied_at,created_at&organization_id=eq.${org}${actionScope ? `&${actionScope}` : ""}&order=applied_at.desc,created_at.desc`),
         apiRequest<DisciplinaryPolicy[]>(session, `disciplinary_policies?select=id,name,description,requires_intermediate_approval,intermediate_approver_label,requires_hr_approval,active,sequence_order&organization_id=eq.${org}&active=eq.true&order=sequence_order,name`),
@@ -276,7 +277,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   async function createPdi(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); resetMessages(); setSaving(true);
     try {
-      await apiRequest(session, "pdis", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, employee_id: pdiEmployee, objective: pdiObjective.trim(), due_date: pdiDueDate || null, actions: [], status: "draft" }) });
+      await pdiRpc(session, "pdi_create", { p_organization_id: organization.id, p_employee_id: pdiEmployee, p_objective: pdiObjective.trim(), p_due_date: pdiDueDate || null });
       setPdiEmployee(""); setPdiObjective(""); setPdiDueDate(""); setNotice("PDI criado para acompanhamento."); await loadData(); setView("pdis");
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível criar o PDI."); } finally { setSaving(false); }
   }
