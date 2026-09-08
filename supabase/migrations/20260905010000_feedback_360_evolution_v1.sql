@@ -304,9 +304,33 @@ begin
     group by p.relationship_type,r.cycle_id,r.id,sc.competency_id,c.name,sc.position_id_snapshot,sc.expected_level_snapshot
     having p.relationship_type in ('self','manager') or count(distinct p.id) >= 3
   ), ordered as (
-    select points.*,lag(points.score) over(partition by points.source_type,points.competency_id order by points.completed_at,coalesce(points.round_id,points.cycle_id)) as prev from points where p_origin_filter is null or points.source_type=p_origin_filter
+    select points.*,
+      lag(points.score) over (
+        partition by points.source_type,points.competency_id
+        order by points.completed_at,coalesce(points.round_id,points.cycle_id)
+      ) as previous_score_candidate,
+      lag(points.position_id) over (
+        partition by points.source_type,points.competency_id
+        order by points.completed_at,coalesce(points.round_id,points.cycle_id)
+      ) as previous_position_id,
+      lag(points.expected_level_snapshot) over (
+        partition by points.source_type,points.competency_id
+        order by points.completed_at,coalesce(points.round_id,points.cycle_id)
+      ) as previous_expected_level
+    from points
+    where p_origin_filter is null or points.source_type=p_origin_filter
+  ), comparable as (
+    select o.*,
+      case when o.previous_score_candidate is not null
+        and o.previous_position_id is not distinct from o.position_id
+        and o.previous_expected_level is not distinct from o.expected_level_snapshot
+        then o.previous_score_candidate end as previous_score
+    from ordered o
   )
-  select o.source_type,o.cycle_id,o.round_id,o.competency_id,o.competency_name,o.position_id,o.expected_level_snapshot,o.score,o.prev,o.score-o.prev,o.score-o.expected_level_snapshot,o.completed_at from ordered o order by o.competency_name,o.source_type,o.completed_at;
+  select c.source_type,c.cycle_id,c.round_id,c.competency_id,c.competency_name,c.position_id,c.expected_level_snapshot,c.score,c.previous_score,
+    case when c.previous_score is not null then c.score-c.previous_score end as delta,
+    c.score-c.expected_level_snapshot as distance_to_expected,c.completed_at
+  from comparable c order by c.competency_name,c.source_type,c.completed_at;
 end $$;
 
 revoke all on function public.fb360_set_updated_at() from public;
