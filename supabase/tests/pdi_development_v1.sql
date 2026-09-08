@@ -73,6 +73,8 @@ select pg_temp.assert_true('new action is normalized',(select count(*)=1 and not
 select public.pdi_add_checkin(:'created_pdi','Progress recorded','Repeat next week','No blocker','private note',:'created_objective',:'created_action') as created_checkin \gset
 select pg_temp.assert_true('checkin append only',not pg_temp.try_sql(format('update public.pdi_checkins set progress_note=%L where id=%L','tamper',:'created_checkin')) and not pg_temp.try_sql(format('delete from public.pdi_checkins where id=%L',:'created_checkin')));
 select pg_temp.assert_true('audit append only',not pg_temp.try_sql(format('update public.pdi_audit_events set reason=%L where entity_id=%L','tamper',:'created_pdi')) and not pg_temp.try_sql(format('delete from public.pdi_audit_events where entity_id=%L',:'created_pdi')));
+select pg_temp.assert_true('ui history select grant exists',has_table_privilege('authenticated','public.pdi_audit_events','select'));
+select pg_temp.assert_true('ui history query authorized without 403',(select count(*) > 0 from public.pdi_audit_events where organization_id='a7000000-0000-0000-0000-000000000001' and entity_type='pdi' and entity_id=:'created_pdi'));
 select pg_temp.assert_true('assessment source link is safe',(select public.pdi_add_source_link(:'created_pdi','assessment_v1','a7000000-0000-0000-0000-000000000061'::uuid,null,'a7000000-0000-0000-0000-000000000041'::uuid,null,'context only',4,:'created_objective') is not null));
 select pg_temp.assert_true('tampered assessment aggregate rejected',not pg_temp.try_sql(format('select public.pdi_add_source_link(%L,%L,%L,null,%L,null,%L,5,%L)',:'created_pdi','assessment_v1','a7000000-0000-0000-0000-000000000061','a7000000-0000-0000-0000-000000000041','tampered',:'created_objective')));
 select pg_temp.assert_true('cross tenant source rejected',not pg_temp.try_sql(format('select public.pdi_add_source_link(%L,%L,%L,null,%L,null,%L,4,null)',:'created_pdi','assessment_v1','b7000000-0000-0000-0000-000000000061','a7000000-0000-0000-0000-000000000041','cross tenant')));
@@ -87,6 +89,8 @@ select pg_temp.assert_true('source link has no confidential columns',(select cou
 -- Manager can operate only on direct reports, not on the external employee.
 select set_config('request.jwt.claim.sub',(select id::text from pdi_users where n=4),false);
 select public.pdi_create('a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000016','Direct report development','2030-12-31') as manager_pdi \gset
+select pg_temp.assert_true('manager history query direct report without 403',(select count(*) > 0 from public.pdi_audit_events where organization_id='a7000000-0000-0000-0000-000000000001' and entity_type='pdi' and entity_id=:'manager_pdi'));
+select pg_temp.assert_true('manager cannot read external history',(select count(*)=0 from public.pdi_audit_events where organization_id='a7000000-0000-0000-0000-000000000001' and entity_type='pdi' and entity_id='a7000000-0000-0000-0000-000000000051'));
 select pg_temp.assert_true('manager cannot create outside pdi',not pg_temp.try_sql($q$select public.pdi_create('a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000017','outside',null)$q$));
 select public.pdi_propose(:'manager_pdi',1);
 select pg_temp.assert_true('manager activates proposed pdi',(select public.pdi_activate(:'manager_pdi',2)));
@@ -97,9 +101,13 @@ select public.pdi_transition(:'manager_pdi','cancelled',5,'human cancellation');
 select pg_temp.assert_true('terminal pdi is immutable',not pg_temp.try_sql(format('select public.pdi_transition(%L,%L,6,%L)',:'manager_pdi','active','invalid')));
 select pg_temp.assert_true('stale update rejected',not pg_temp.try_sql(format('select public.pdi_transition(%L,%L,3,%L)',:'manager_pdi','paused','stale')));
 
+select set_config('request.jwt.claim.sub',(select id::text from pdi_users where n=2),false);
+select pg_temp.assert_true('rh history query own tenant without 403',(select count(*) > 0 from public.pdi_audit_events where organization_id='a7000000-0000-0000-0000-000000000001'));
+
 -- Diretoria has no raw PDI access and only receives the safe aggregate RPC.
 select set_config('request.jwt.claim.sub',(select id::text from pdi_users where n=3),false);
 select pg_temp.assert_true('diretoria has no raw pdi',(select count(*)=0 from public.pdis where organization_id='a7000000-0000-0000-0000-000000000001'));
+select pg_temp.assert_true('diretoria has no raw pdi history',(select count(*)=0 from public.pdi_audit_events where organization_id='a7000000-0000-0000-0000-000000000001'));
 select pg_temp.assert_true('diretoria aggregate keeps safe active cell',(select count(*)=1 and max(value) filter(where metric='active_plans' and status='active')=5 from public.pdi_read_organization_aggregate('a7000000-0000-0000-0000-000000000001')));
 select pg_temp.assert_true('diretoria aggregate suppresses small cells',(select count(*) filter(where metric='objectives_by_status')=0 and count(*) filter(where metric='blocked_actions')=0 from public.pdi_read_organization_aggregate('a7000000-0000-0000-0000-000000000001')));
 select pg_temp.assert_true('directoria cannot write',not pg_temp.try_sql(format('select public.pdi_create(%L,%L,%L,null)','a7000000-0000-0000-0000-000000000001','a7000000-0000-0000-0000-000000000016','bad')));
