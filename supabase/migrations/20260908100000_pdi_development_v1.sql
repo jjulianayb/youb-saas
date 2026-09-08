@@ -392,6 +392,7 @@ begin
     if p_source_assessment_id is null or p_source_round_id is not null or p_relationship_type is not null then raise exception 'invalid assessment source link shape' using errcode='23514'; end if;
     select a.subject_employee_id,a.position_id,s.expected_level_snapshot,s.score::numeric into v_subject,v_position,v_expected,v_assessment_score from public.assessments a join public.assessment_competency_scores s on s.organization_id=a.organization_id and s.assessment_id=a.id where a.organization_id=v_p.organization_id and a.id=p_source_assessment_id and a.subject_employee_id=v_p.employee_id and a.status='completed' limit 1;
     if v_subject is null then raise exception 'assessment source is invalid or outside the pdi population' using errcode='42501'; end if;
+    if p_safe_aggregate_score is not null and round(p_safe_aggregate_score,2) <> round(v_assessment_score,2) then raise exception 'assessment source value does not match the authorized context' using errcode='23514'; end if;
     p_safe_aggregate_score := coalesce(p_safe_aggregate_score,v_assessment_score);
   elsif p_source_kind='feedback_360' then
     if p_source_round_id is null or p_source_assessment_id is not null or p_competency_id is null or p_relationship_type not in ('self','manager','peer','direct_report') then raise exception 'invalid feedback source link shape' using errcode='23514'; end if;
