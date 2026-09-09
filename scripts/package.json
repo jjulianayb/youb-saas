@@ -6,7 +6,7 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:bee-runtime": "tsx --test ../artifacts/mockup-sandbox/src/features/intelligence-core/bee-runtime.test.ts ../artifacts/mockup-sandbox/src/features/dho-intelligence/service.test.ts ../artifacts/mockup-sandbox/src/components/mockups/ExecutiveHome.test.ts",
+    "test:bee-runtime": "tsx --test ../artifacts/mockup-sandbox/src/features/intelligence-core/bee-runtime.test.ts ../artifacts/mockup-sandbox/src/features/dho-intelligence/service.test.ts ../artifacts/mockup-sandbox/src/components/mockups/ExecutiveHome.test.ts ../artifacts/mockup-sandbox/src/components/commercial/CommercialV1Demo.test.ts",
     "test:classic-dho-access": "tsx --test ../artifacts/mockup-sandbox/src/features/classic-dho-access.test.ts"
   },
   "devDependencies": {
