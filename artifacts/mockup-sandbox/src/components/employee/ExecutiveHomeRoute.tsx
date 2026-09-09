@@ -3,6 +3,7 @@ import ExecutiveHome from "../mockups/ExecutiveHome";
 import EmployeeExperienceRoute from "./EmployeeExperienceRoute";
 import { getEmployeeExperienceContext, type EmployeeExperienceContext, type SupabaseSession } from "../../lib/supabase";
 import { handleBeeIntent, readBeeRuntime, type BeeIntent, type BeeRuntimeContext, type BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
+import { appPath } from "../../lib/app-paths";
 
 function safeSession(): SupabaseSession | null { try { const raw = window.localStorage.getItem("youb-session"); return raw ? JSON.parse(raw) as SupabaseSession : null; } catch { return null; } }
 function displayName(session: SupabaseSession, context: EmployeeExperienceContext): string { return context.employee?.full_name || (typeof session.user.user_metadata?.full_name === "string" ? session.user.user_metadata.full_name : null) || session.user.email || "Usuário autenticado"; }
@@ -16,7 +17,7 @@ export default function ExecutiveHomeRoute() {
   const runtimeContext = useMemo(() => session && organizationContext ? buildRuntimeContext(session, organizationContext) : null, [session, organizationContext]);
   function runIntent(intent: BeeIntent) { if (!model) return; const result = handleBeeIntent(model, intent); if (intent === "attention_today") setBeeResponse(result.attention?.length ? `${result.attention.length} prioridade(s) com contexto disponível. Abra um card para ver a explicação.` : "Nenhum item exige atenção especial agora."); else if (intent === "list_open_readings") setBeeResponse(result.readings?.length ? `${result.readings.length} Leitura(s) Organizacional(is) aberta(s).` : "Nenhuma Leitura Organizacional aberta no momento."); else if (intent === "list_unknowns") setBeeResponse(result.unknowns?.length ? `${result.unknowns.length} ponto(s) ainda precisam de investigação.` : "Não há unknowns registrados neste contexto."); else if (intent === "list_actions") setBeeResponse(result.actions?.length ? `${result.actions.length} Action(s) autorizada(s) estão disponíveis.` : "Nenhuma Action disponível neste contexto."); }
   if (loading) return <PageMessage title="Preparando sua Home executiva" detail="Estamos reunindo apenas os dados e conhecimentos permitidos para você." />;
-  if (!session) return <PageMessage title="Acesse sua conta" detail="Entre na youB para visualizar sua Home executiva." action={<a className="mt-5 inline-flex rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground" href="/preview/Onboarding">Abrir acesso</a>} />;
+  if (!session) return <PageMessage title="Acesse sua conta" detail="Entre na youB para visualizar sua Home executiva." action={<a className="mt-5 inline-flex rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground" href={appPath("/preview/Onboarding")}>Abrir acesso</a>} />;
   if (error || !organizationContext) return <PageMessage title="Contexto indisponível" detail={error ?? "Não foi possível identificar sua organização."} />;
   if (organizationContext.membership.role === "colaborador") return <EmployeeExperienceRoute />;
   if (!model || !runtimeContext) return <PageMessage title="Visão executiva indisponível" detail="Os contratos autorizados ainda não estão disponíveis. Tente novamente em instantes." />;
