@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDhoContextItems, dhoPopulationMode, dhoSourceAvailability } from "./service";
+import { MAX_DHO_DIRECT_REPORTS, buildDhoContextItems, dhoPopulationMode, dhoSourceAvailability, dhoSubjectRequestPlan } from "./service";
 
 test("DHO adapter preserves provenance and rejects no-context as evolution", () => {
   const items = buildDhoContextItems({
@@ -41,6 +41,19 @@ test("DHO population is role-aware and never treats a manager's own employee as 
   assert.equal(dhoPopulationMode("gestor", "manager-employee"), "direct_reports");
   assert.equal(dhoPopulationMode("colaborador", "employee-a"), "self");
   assert.equal(dhoPopulationMode("gestor", null), "empty");
+});
+
+test("large populations never create one evolution RPC per tenant employee", () => {
+  const employeeIds = Array.from({ length: 1000 }, (_, index) => `employee-${index}`);
+  const tenant = dhoSubjectRequestPlan("rh", employeeIds);
+  assert.equal(tenant.mode, "aggregate_only");
+  assert.equal(tenant.evolutionRpcCalls, 0);
+  assert.equal(tenant.subjectIds.length, 0);
+  const manager = dhoSubjectRequestPlan("gestor", employeeIds);
+  assert.equal(manager.mode, "direct_reports");
+  assert.equal(manager.evolutionRpcCalls, MAX_DHO_DIRECT_REPORTS);
+  assert.equal(manager.subjectIds.length, MAX_DHO_DIRECT_REPORTS);
+  assert.equal(manager.bounded, true);
 });
 
 test("a failed source remains a limitation while valid sources stay available", () => {
