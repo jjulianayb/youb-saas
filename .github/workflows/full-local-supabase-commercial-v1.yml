@@ -52,7 +52,7 @@ jobs:
           echo "::add-mask::$SERVICE_ROLE_KEY"
           echo "::add-mask::$DB_URL"
 
-      - name: Apply exactly 32 RC migrations to empty database
+      - name: Apply exactly 33 RC migrations to empty database
         run: |
           count=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort | wc -l)
           test "$count" -eq 33
@@ -89,7 +89,11 @@ jobs:
           set -euo pipefail
           for test in supabase/tests/*.sql; do
             echo "RUNNING_SQL_SUITE=$test"
-            psql "$DB_URL" -v ON_ERROR_STOP=1 -1 -f "$test"
+            if ! psql "$DB_URL" -v ON_ERROR_STOP=1 -1 --echo-errors -f "$test"; then
+              echo "FULL_LOCAL_SQL_SUITE_FAILED=$test"
+              exit 3
+            fi
+            echo "FULL_LOCAL_SQL_SUITE_PASS=$test"
           done
           echo "FULL_LOCAL_SQL_SUITES=PASS"
 
