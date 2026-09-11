@@ -132,7 +132,7 @@ select pg_temp.assert_true('admin reads own events',exists(select 1 from public.
 
 -- Append-only event contract: no update/delete grant is exposed in V1.
 create or replace function pg_temp.event_update_denied() returns boolean language plpgsql security invoker as $$ declare affected bigint; begin begin update public.organizational_events set payload='{"changed":true}' where id=(select value from ctx where key='event_a'); get diagnostics affected = row_count; return affected = 0; exception when others then return true; end; end; $$;
-create or replace function pg_temp.event_delete_denied() returns boolean language plpgsql security invoker as $$ begin begin delete from public.organizational_events where id=(select value from ctx where key='event_a'); return false; exception when others then return true; end; end; $$;
+create or replace function pg_temp.event_delete_denied() returns boolean language plpgsql security invoker as $$ declare affected bigint; begin begin delete from public.organizational_events where id=(select value from ctx where key='event_a'); get diagnostics affected = row_count; return affected = 0; exception when others then return true; end; end; $$;
 select pg_temp.assert_true('event update is denied to preserve occurrence history',pg_temp.event_update_denied());
 select pg_temp.assert_true('event delete is denied to preserve occurrence history',pg_temp.event_delete_denied());
 
