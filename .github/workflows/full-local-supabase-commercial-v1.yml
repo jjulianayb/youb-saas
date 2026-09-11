@@ -52,10 +52,10 @@ jobs:
           echo "::add-mask::$SERVICE_ROLE_KEY"
           echo "::add-mask::$DB_URL"
 
-      - name: Apply exactly 34 RC migrations to empty database
+      - name: Apply exactly 35 RC migrations to empty database
         run: |
           count=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort | wc -l)
-          test "$count" -eq 34
+          test "$count" -eq 35
           supabase db reset --debug
           echo "FULL_SUPABASE_MIGRATIONS_PASS=$count"
 
