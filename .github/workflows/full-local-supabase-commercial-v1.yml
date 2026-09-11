@@ -90,7 +90,7 @@ jobs:
           # The existing SQL fixture creates a temp ctx table as postgres and
           # then intentionally SET ROLE authenticated. Grant only temp-fixture
           # SELECT visibility; this does not change product tables or policies.
-          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT SELECT ON TABLES TO authenticated;"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT SELECT, INSERT ON TABLES TO authenticated;"
           for test in supabase/tests/*.sql; do
             echo "RUNNING_SQL_SUITE=$test"
             if ! psql "$DB_URL" -v ON_ERROR_STOP=1 -1 --echo-errors -f "$test"; then
