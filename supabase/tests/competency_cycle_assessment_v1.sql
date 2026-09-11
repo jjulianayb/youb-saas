@@ -91,7 +91,7 @@ select pg_temp.assert_true('position without mapping explicit failure',not pg_te
 -- Manager path: direct report only, scores 1–5, submit; RH completes.
 select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=4),false);
 select pg_temp.assert_true('manager cannot create outside population',not pg_temp.try_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000038','a5000000-0000-0000-0000-000000000034'));
-select pg_temp.assert_true('manager sees direct mapping only',(select count(*)=2 from public.position_competencies));
+select pg_temp.assert_true('manager sees direct mapping only in the requested tenant',(select count(*)=2 from public.position_competencies where organization_id='a5000000-0000-0000-0000-000000000001'));
 select public.cca_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000035','a5000000-0000-0000-0000-000000000034') as id \gset manager_assessment_
 select public.cca_save_assessment_score(:'manager_assessment_id'::uuid,'a5000000-0000-0000-0000-000000000021'::uuid,5::smallint,'evidência');
 select pg_temp.assert_true('score outside range rejected',not pg_temp.try_bad_score(:'manager_assessment_id'::uuid,'a5000000-0000-0000-0000-000000000022'::uuid));
