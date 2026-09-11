@@ -7,11 +7,11 @@ do $$ begin
   if (select count(*) from auth.users) < 5 then raise exception 'suite requires five auth users'; end if;
 end $$;
 insert into ctx values
- ('org_a','eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'),('org_b','ffffffff-ffff-ffff-ffff-ffffffffffff'),
- ('employee_a','eeeeeeee-0000-0000-0000-000000000001'),('employee_b','ffffffff-0000-0000-0000-000000000001'),
- ('recommendation_a','eeeeeeee-0000-0000-0000-000000000010'),('intervention_a','eeeeeeee-0000-0000-0000-000000000011'),
- ('signal_a','eeeeeeee-0000-0000-0000-000000000012'),('evidence_supports','eeeeeeee-0000-0000-0000-000000000013'),
- ('evidence_contradicts','eeeeeeee-0000-0000-0000-000000000014'),('evidence_neutral','eeeeeeee-0000-0000-0000-000000000015');
+ ('org_a','aaaaaaa1-eeee-eeee-eeee-eeeeeeeeeeee'),('org_b','ffffffff-ffff-ffff-ffff-ffffffffffff'),
+ ('employee_a','aaaaaaa1-0000-0000-0000-000000000001'),('employee_b','ffffffff-0000-0000-0000-000000000001'),
+ ('recommendation_a','aaaaaaa1-0000-0000-0000-000000000010'),('intervention_a','aaaaaaa1-0000-0000-0000-000000000011'),
+ ('signal_a','aaaaaaa1-0000-0000-0000-000000000012'),('evidence_supports','aaaaaaa1-0000-0000-0000-000000000013'),
+ ('evidence_contradicts','aaaaaaa1-0000-0000-0000-000000000014'),('evidence_neutral','aaaaaaa1-0000-0000-0000-000000000015');
 insert into ctx select 'user_'||row_number() over(order by created_at),id from auth.users order by created_at limit 5;
 insert into public.organizations(id,name,slug,plan,status) values ((select value from ctx where key='org_a'),'Recommendation A','recommendation-a','essencial','active'),((select value from ctx where key='org_b'),'Recommendation B','recommendation-b','essencial','active');
 insert into public.memberships(organization_id,user_id,role) values ((select value from ctx where key='org_a'),(select value from ctx where key='user_1'),'admin_youb'),((select value from ctx where key='org_a'),(select value from ctx where key='user_2'),'diretoria'),((select value from ctx where key='org_a'),(select value from ctx where key='user_3'),'gestor'),((select value from ctx where key='org_a'),(select value from ctx where key='user_4'),'colaborador'),((select value from ctx where key='org_a'),(select value from ctx where key='user_5'),'rh');
