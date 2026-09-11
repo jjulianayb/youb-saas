@@ -1,0 +1,123 @@
+name: Full Local Supabase Commercial V1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-local-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PORT: 4173
+      BASE_PATH: /
+    steps:
+      - name: Check out frozen RC validation branch
+        uses: actions/checkout@v4
+        with:
+          ref: validation/full-local-supabase-commercial-v1
+          fetch-depth: 1
+
+      - name: Set up Node and pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Initialize and start ephemeral Supabase stack
+        run: |
+          supabase --version
+          docker --version
+          supabase init --force
+          supabase start -x studio,imgproxy,analytics,vector,logflare,edge-runtime,realtime,storage-api,supavisor
+          supabase status
+          eval "$(supabase status -o env)"
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "DB_URL=$DB_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$ANON_KEY"
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          echo "::add-mask::$DB_URL"
+
+      - name: Apply exactly 32 RC migrations to empty database
+        run: |
+          count=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort | wc -l)
+          test "$count" -eq 32
+          supabase db reset --debug
+          echo "FULL_SUPABASE_MIGRATIONS_PASS=$count"
+
+      - name: Create fictitious Auth identities through local Auth admin API
+        run: |
+          set -euo pipefail
+          create_user() {
+            key="$1"; email="$2"; display="$3"
+            body=$(jq -nc --arg e "$email" --arg n "$display" '{email:$e,password:"LocalPass!123",email_confirm:true,user_metadata:{display_name:$n}}')
+            response=$(curl -fsS -X POST "$SUPABASE_URL/auth/v1/admin/users" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H 'Content-Type: application/json' -d "$body")
+            id=$(jq -er '.id' <<<"$response")
+            echo "$key=$id" >> "$GITHUB_ENV"
+          }
+          create_user ADMIN_ID admin@demo.invalid admin_youb
+          create_user RH_ID rh@demo.invalid rh
+          create_user DIRETORIA_ID diretoria@demo.invalid diretoria
+          create_user GESTOR_ID gestor@demo.invalid gestor
+          create_user COLABORADOR_ID colaborador@demo.invalid colaborador
+          create_user NOEMP_ID noemployee@demo.invalid usuario_sem_employee
+          create_user TENANT_B_ID tenantb@demo.invalid tenant_b_user
+          create_user PEER1_ID peer1@demo.invalid peer_one
+          create_user PEER2_ID peer2@demo.invalid peer_two
+          create_user PEER3_ID peer3@demo.invalid peer_three
+
+      - name: Load fictitious multi-tenant seed using local admin database connection
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -v ADMIN_ID="$ADMIN_ID" -v RH_ID="$RH_ID" -v DIRETORIA_ID="$DIRETORIA_ID" -v GESTOR_ID="$GESTOR_ID" -v COLABORADOR_ID="$COLABORADOR_ID" -v NOEMP_ID="$NOEMP_ID" -v TENANT_B_ID="$TENANT_B_ID" -f scripts/validation_seed.sql
+
+      - name: Run all existing SQL suites against the real local Supabase database
+        run: |
+          set -euo pipefail
+          for test in supabase/tests/*.sql; do
+            echo "RUNNING_SQL_SUITE=$test"
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -1 -f "$test"
+          done
+          echo "FULL_LOCAL_SQL_SUITES=PASS"
+
+      - name: Exercise real Auth, JWT, PostgREST, RLS and logout
+        env:
+          NODE_OPTIONS: --no-warnings
+        run: node scripts/validation_smoke.mjs
+
+      - name: Install dependencies and validate frontend/build/typecheck
+        run: |
+          pnpm install --frozen-lockfile
+          VITE_SUPABASE_URL="$SUPABASE_URL" VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" pnpm run build
+          pnpm --filter @workspace/scripts run test:bee-runtime
+          pnpm --filter @workspace/scripts run test:classic-dho-access
+          echo "FRONTEND_BUILD_TYPECHECK_RUNTIME=PASS"
+
+      - name: Archive local validation preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: commercial-v1-full-local-preview
+          path: artifacts/mockup-sandbox/dist
+          if-no-files-found: error
+
+      - name: Record immutable validation identity
+        run: |
+          echo "RC_SHA=$(git rev-parse HEAD)"
+          echo "VALIDATION_BRANCH=$(git branch --show-current)"
+          echo "SUPABASE_CLI=$(supabase --version)"
+          echo "POSTGRES_IMAGE_AND_STACK=$(docker ps --format '{{.Image}}' | sort -u | tr '\n' ' ')"
+
+      - name: Stop and destroy ephemeral local stack
+        if: always()
+        run: supabase stop --no-backup || true
