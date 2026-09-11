@@ -120,6 +120,7 @@ select pg_temp.assert_true('tampered organization is denied',not pg_temp.try_agg
 select pg_temp.assert_true('nonexistent cycle fails closed',not pg_temp.try_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid));
 select pg_temp.assert_true('aggregate shape excludes raw identity',(select not (array_to_string(proargnames,',') ~ '(employee|evaluator|comment|evidence)') from pg_proc where oid='public.cca_read_assessment_aggregate(uuid,uuid)'::regprocedure));
 select pg_temp.assert_true('legacy aggregate signature removed',to_regprocedure('public.cca_read_assessment_aggregate(uuid)') is null);
+do $$ begin raise notice 'CCA_PRIV anon=% auth=%', has_function_privilege('anon','public.cca_read_assessment_aggregate(uuid,uuid)','execute'), has_function_privilege('authenticated','public.cca_read_assessment_aggregate(uuid,uuid)','execute'); end $$;
 select pg_temp.assert_true('aggregate execute only authenticated',not has_function_privilege('anon','public.cca_read_assessment_aggregate(uuid,uuid)','execute') and has_function_privilege('authenticated','public.cca_read_assessment_aggregate(uuid,uuid)','execute'));
 select pg_temp.assert_true('all PR14 security definer functions pin search_path',(select bool_and(prosecdef and array_to_string(proconfig,',') like '%search_path=public%' and array_to_string(proconfig,',') like '%pg_temp%') from pg_proc where pronamespace='public'::regnamespace and proname like 'cca_%'));
 
