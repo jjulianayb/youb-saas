@@ -1,6 +1,8 @@
 name: Full Local Supabase Commercial V1
 
 on:
+  push:
+    branches: [validation/full-local-supabase-commercial-v1]
   workflow_dispatch:
 
 permissions:
