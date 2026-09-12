@@ -4,6 +4,11 @@ on:
   push:
     branches: [validation/full-local-supabase-commercial-v1-hardening]
   workflow_dispatch:
+    inputs:
+      target_ref:
+        description: 'Exact code ref to validate; validation harness stays outside the RC'
+        required: false
+        default: 'validation/full-local-supabase-commercial-v1-hardening'
 
 permissions:
   contents: read
@@ -16,11 +21,17 @@ jobs:
       PORT: 4173
       BASE_PATH: /
     steps:
-      - name: Check out frozen RC validation branch
+      - name: Check out exact target RC
         uses: actions/checkout@v4
         with:
-          ref: validation/full-local-supabase-commercial-v1-hardening
+          ref: ${{ inputs.target_ref || 'validation/full-local-supabase-commercial-v1-hardening' }}
           fetch-depth: 1
+
+      - name: Load validation-only harness outside the final RC
+        if: ${{ inputs.target_ref != '' && inputs.target_ref != 'validation/full-local-supabase-commercial-v1-hardening' }}
+        run: |
+          git fetch --no-tags --depth=1 origin validation/full-local-supabase-commercial-v1-hardening
+          git checkout FETCH_HEAD -- scripts/validation_seed.sql scripts/validation_smoke.mjs
 
       - name: Set up Node and pnpm
         uses: pnpm/action-setup@v4
