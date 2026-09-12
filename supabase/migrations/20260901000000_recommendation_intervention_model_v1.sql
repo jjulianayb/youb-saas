@@ -1,0 +1,18 @@
+create index if not exists idx_intelligence_recommendations_org_type_state on public.intelligence_recommendations(organization_id,recommendation_type,evidence_state,status);
+create index if not exists idx_intelligence_recommendations_org_scope on public.intelligence_recommendations(organization_id,scope_type);
+create index if not exists idx_intelligence_interventions_org_family_scope on public.intelligence_interventions(organization_id,intervention_family,target_scope_type);
+drop policy if exists intelligence_recommendations_insert_role on public.intelligence_recommendations;
+drop policy if exists intelligence_recommendations_update_role on public.intelligence_recommendations;
+create policy intelligence_recommendations_insert_role on public.intelligence_recommendations for insert to authenticated with check(public.intelligence_is_admin(organization_id));
+create policy intelligence_recommendations_update_role on public.intelligence_recommendations for update to authenticated using(public.intelligence_is_admin(organization_id)) with check(public.intelligence_is_admin(organization_id));
+drop policy if exists intelligence_interventions_insert_role on public.intelligence_interventions;
+drop policy if exists intelligence_interventions_update_role on public.intelligence_interventions;
+create policy intelligence_interventions_insert_role on public.intelligence_interventions for insert to authenticated with check(public.intelligence_is_admin(organization_id));
+create policy intelligence_interventions_update_role on public.intelligence_interventions for update to authenticated using(public.intelligence_is_admin(organization_id)) with check(public.intelligence_is_admin(organization_id));
+drop policy if exists recommendation_evidence_insert on public.intelligence_recommendation_evidence;
+create policy recommendation_evidence_insert on public.intelligence_recommendation_evidence for insert to authenticated with check(public.intelligence_is_admin(organization_id));
+comment on table public.intelligence_recommendations is 'Structured, explainable contract for Leitura Organizacional. No automatic generation, scoring or execution.';
+comment on column public.intelligence_recommendations.scope_ref is 'Reference only; never an authorization mechanism.';
+comment on column public.intelligence_recommendations.source_evidence_ids is 'Compatibility only; intelligence_recommendation_evidence is authoritative.';
+comment on table public.intelligence_interventions is 'Extensible intervention contract. No recommendation-to-intervention automation or execution in V1.';
+comment on column public.intelligence_interventions.target_scope_ref is 'Reference only; never an authorization mechanism.';

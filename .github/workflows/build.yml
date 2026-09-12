@@ -9,6 +9,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       PORT: 4173
       BASE_PATH: /
@@ -30,6 +44,14 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build workspace
         run: pnpm run build
+      - name: Run Bee Runtime unit tests
+        run: pnpm --filter @workspace/scripts run test:bee-runtime
+      - name: Run classic DHO access query tests
+        run: pnpm --filter @workspace/scripts run test:classic-dho-access
+      - name: Run local SQL migrations and RLS suites
+        run: bash scripts/test-sql.sh
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
       - name: Archive deployable preview
         uses: actions/upload-artifact@v4
         with:
