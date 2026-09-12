@@ -249,7 +249,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     try {
       const payload = { full_name: employeeName.trim(), email: employeeEmail.trim() || null, area_id: employeeArea || null, position_id: employeePosition || null, seniority: employeeSeniority || null, manager_employee_id: employeeManager || null };
       if (editingEmployee) {
-        await apiRequest(session, `employees?id=eq.${encodeURIComponent(editingEmployee)}&organization_id=eq.${encodeURIComponent(organization.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(payload) });
+        await apiRequest(session, "rpc/update_employee_profile", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ p_employee_id: editingEmployee, p_full_name: payload.full_name, p_email: payload.email, p_area_id: payload.area_id, p_position_id: payload.position_id, p_seniority: payload.seniority, p_manager_employee_id: payload.manager_employee_id, p_status: null }) });
         setNotice("Dados do colaborador atualizados.");
       } else {
         await apiRequest(session, "employees", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, ...payload, status: "active" }) });
