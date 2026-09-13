@@ -5,14 +5,14 @@ begin;
 create temp table p0_auth_users as
 select id, row_number() over (order by created_at, id) as n
 from auth.users
-limit 2;
-do $$ begin if (select count(*) from p0_auth_users) < 2 then raise exception 'P0 suite requires two auth users'; end if; end $$;
+limit 3;
+do $$ begin if (select count(*) from p0_auth_users) < 3 then raise exception 'P0 suite requires three auth users'; end if; end $$;
 grant select on p0_auth_users to authenticated;
 
 insert into public.organizations(id,name,slug,plan,status) values
  ('e9000000-0000-0000-0000-000000000001','P0 Event Org','p0-event-org','essencial','active');
 insert into public.memberships(organization_id,user_id,role)
-select 'e9000000-0000-0000-0000-000000000001',id,case when p0_auth_users.n=1 then 'admin_youb' else 'rh' end
+select 'e9000000-0000-0000-0000-000000000001',id,case when p0_auth_users.n=1 then 'admin_youb' when p0_auth_users.n=2 then 'rh' else 'diretoria' end
 from p0_auth_users;
 insert into public.organizations(id,name,slug,plan,status) values
  ('e9000000-0000-0000-0000-000000000002','P0 Other Org','p0-other-org','essencial','active');
@@ -126,6 +126,20 @@ begin
   );
   if v_retry.id<>v_created.id then raise exception 'creation retry was not idempotent'; end if;
   if (select count(*) from public.organizational_events where entity_id=v_created.id and event_type='employee_created')<>1 then raise exception 'creation retry duplicated employee_created'; end if;
+end $$;
+
+-- Authorization contract: the existing RLS contract permits diretoria to manage people,
+-- so the domain RPCs preserve create and edit for diretoria (not an expansion).
+do $$
+declare v_directoria public.employees%rowtype; v_updated public.employees%rowtype; v_directoria_id uuid;
+begin
+  select id into v_directoria_id from p0_auth_users where p0_auth_users.n=3;
+  perform set_config('request.jwt.claim.sub',v_directoria_id::text,true);
+  select * into strict v_directoria from public.create_employee_profile('e9000000-0000-0000-0000-000000000001','P0 Diretoria Employee',null,null,null,null,null,'active','e9000000-0000-0000-0000-000000009903');
+  select * into strict v_updated from public.update_employee_profile(v_directoria.id,'P0 Diretoria Employee Updated',null,null,null,null,null,'inactive');
+  if v_updated.status<>'inactive' then raise exception 'diretoria employee edit was not authorized'; end if;
+  if (select actor_user_id from public.organizational_events where entity_id=v_directoria.id and event_type='employee_created')<>v_directoria_id then raise exception 'diretoria create actor mismatch'; end if;
+  perform set_config('request.jwt.claim.sub',(select id::text from p0_auth_users where p0_auth_users.n=1),true);
 end $$;
 
 create or replace function pg_temp.try_create_employee(p_org uuid,p_area uuid,p_position uuid,p_manager uuid) returns boolean

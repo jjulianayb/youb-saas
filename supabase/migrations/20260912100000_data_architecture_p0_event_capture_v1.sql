@@ -229,7 +229,7 @@ declare
 begin
   select e.* into strict v_before from public.employees e where e.id=p_employee_id for update;
   v_org := v_before.organization_id;
-  if not public.has_org_role(v_org,array['admin_youb','rh']) then
+  if not public.has_org_role(v_org,array['admin_youb','diretoria','rh']) then
     raise exception 'employee update is not authorized' using errcode='42501';
   end if;
   if nullif(btrim(coalesce(p_full_name,'')),'') is null then
@@ -308,6 +308,8 @@ begin
   if auth.uid() is null or p_organization_id is null or not public.has_org_role(p_organization_id,array['admin_youb','diretoria','rh']) then
     raise exception 'employee creation is not authorized' using errcode='42501';
   end if;
+  -- correlation_id identifies one logical create operation; the xact lock closes the concurrent retry race.
+  perform pg_advisory_xact_lock(hashtextextended(p_organization_id::text || ':create_employee_profile:' || v_correlation::text,0));
   if p_correlation_id is not null then
     select oe.entity_id into v_existing_id
     from public.organizational_events oe
