@@ -77,9 +77,9 @@ do $$ begin if pg_temp.try_direct_employee_update() then raise exception 'direct
 create or replace function pg_temp.try_cross_tenant_profile() returns boolean language plpgsql security invoker as $$ begin perform public.update_employee_profile('e9000000-0000-0000-0000-000000000013','forbidden','forbidden@example.invalid',null,null,'senior','e9000000-0000-0000-0000-000000000021','active'); return true; exception when others then return false; end $$;
 do $$ begin if pg_temp.try_cross_tenant_profile() then raise exception 'cross-tenant profile mutation was accepted'; end if; if (select status from public.employees where id='e9000000-0000-0000-0000-000000000013')<>'inactive' then raise exception 'failed cross-tenant mutation changed state'; end if; end $$;
 
-select public.cca_update_position_competency('e9000000-0000-0000-0000-000000000401',3,true);
-select public.cca_save_assessment_score('e9000000-0000-0000-0000-000000000601','e9000000-0000-0000-0000-000000000301',2,'first score');
-select public.cca_save_assessment_score('e9000000-0000-0000-0000-000000000601','e9000000-0000-0000-0000-000000000301',3,'changed score');
+select public.cca_update_position_competency('e9000000-0000-0000-0000-000000000401',3::smallint,true);
+select public.cca_save_assessment_score('e9000000-0000-0000-0000-000000000601','e9000000-0000-0000-0000-000000000301',2::smallint,'first score');
+select public.cca_save_assessment_score('e9000000-0000-0000-0000-000000000601','e9000000-0000-0000-0000-000000000301',3::smallint,'changed score');
 do $$ begin
  if (select count(*) from public.organizational_events where event_type='competency_expected_level_changed')<>1 then raise exception 'expected level event missing'; end if;
  if (select count(*) from public.organizational_events where event_type='competency_score_changed')<>2 then raise exception 'score change events missing'; end if;
