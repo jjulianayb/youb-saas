@@ -9,6 +9,10 @@ on:
         description: 'Exact code ref to validate; validation harness stays outside the RC'
         required: false
         default: 'validation/full-local-supabase-commercial-v1-hardening'
+      expected_migrations:
+        description: 'Expected migration count for the target ref'
+        required: false
+        default: '37'
 
 permissions:
   contents: read
@@ -63,10 +67,10 @@ jobs:
           echo "::add-mask::$SERVICE_ROLE_KEY"
           echo "::add-mask::$DB_URL"
 
-      - name: Apply exactly 37 RC migrations to empty database
+      - name: Apply expected RC migrations to empty database
         run: |
           count=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort | wc -l)
-          test "$count" -eq 37
+          test "$count" -eq "${{ inputs.expected_migrations || '37' }}"
           supabase db reset --debug
           echo "FULL_SUPABASE_MIGRATIONS_PASS=$count"
 
