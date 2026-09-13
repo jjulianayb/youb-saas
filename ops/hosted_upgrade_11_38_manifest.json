@@ -1,0 +1,153 @@
+{
+  "source_sha": "5fe96cc577480815ae52a4c648043a5c62db8ed9",
+  "migration_count": 28,
+  "first_migration": "20260830020000_access_context_foundation.sql",
+  "last_migration": "20260912100000_data_architecture_p0_event_capture_v1.sql",
+  "migrations": [
+    {
+      "migration": "20260830020000_access_context_foundation.sql",
+      "sha256": "fdd0752fae12bd4efe20737338ceb35703c18a9a66d308b877cc2e0670e5e261",
+      "size_bytes": 8486
+    },
+    {
+      "migration": "20260831030000_intelligence_core_foundation.sql",
+      "sha256": "3bfe7cf89edc69559f5f553139b2133ee985aa8374e11999461701400503e5f2",
+      "size_bytes": 9483
+    },
+    {
+      "migration": "20260831040000_access_foundation_hardening.sql",
+      "sha256": "b627e3a8077db4e06de3f9646a63b12bb1891b1341f8cf88fd7711347008d036",
+      "size_bytes": 3039
+    },
+    {
+      "migration": "20260831050000_intelligence_core_hardening.sql",
+      "sha256": "06520a1ff2316778e6959f8188826e2d946d989b2d4d26f3af4dfa08a0cccffb",
+      "size_bytes": 15444
+    },
+    {
+      "migration": "20260831200000_signal_evidence_model_v1.sql",
+      "sha256": "c74ad001129e1c65952049bcf1db16bedbd8255b46ece5b4806db0ed332f75ff",
+      "size_bytes": 9221
+    },
+    {
+      "migration": "20260831210000_recommendation_model_v1_base.sql",
+      "sha256": "068a8dc036dd40b684f5f370eecbfd7b707235455fbf30eef4afdd9d04796817",
+      "size_bytes": 1806
+    },
+    {
+      "migration": "20260831210001_intervention_model_v1_base.sql",
+      "sha256": "37b857523b7eba3d76b0e72bcda57e8d28a4f63918d4be735de0e543ffc04140",
+      "size_bytes": 875
+    },
+    {
+      "migration": "20260831210002_recommendation_intervention_v1_constraints.sql",
+      "sha256": "61be2070948c459287e08fa657110771a0035069b311af017ecf655ba60b1e55",
+      "size_bytes": 5381
+    },
+    {
+      "migration": "20260901000000_recommendation_intervention_model_v1.sql",
+      "sha256": "f50c514cf735c7595cde4adc8b3e6dc9a421586d13cde768e423615ece04c5ae",
+      "size_bytes": 2709
+    },
+    {
+      "migration": "20260901130000_bee_actions_impact_foundation_v1.sql",
+      "sha256": "11671561591600a4387a93a86752cb540dc5891389ec3aa69acbbafaddaf24a2",
+      "size_bytes": 14800
+    },
+    {
+      "migration": "20260901150000_bee_actions_impact_hardening_v1.sql",
+      "sha256": "84acc0d0ceaa20c41d9fa0268f3d59254463acc387db9090c91daadd6e246e82",
+      "size_bytes": 4937
+    },
+    {
+      "migration": "20260901170000_organizational_memory_event_layer_v1.sql",
+      "sha256": "3c70161d8e851ce90c94118141ece711622d56e4bfe176d6a98aa3b98528b499",
+      "size_bytes": 11675
+    },
+    {
+      "migration": "20260901193000_organizational_memory_event_layer_v1_hardening.sql",
+      "sha256": "11110eaf2d1529bcafa45acd0f9b5db42aacbb1e79a31a76986d2b45e583cc07",
+      "size_bytes": 1545
+    },
+    {
+      "migration": "20260901210000_decision_engine_v1.sql",
+      "sha256": "32c13a06cc439ae0d83a2c911c74061d0b053b7a16ac568803fb73aab960539c",
+      "size_bytes": 12614
+    },
+    {
+      "migration": "20260901213000_decision_engine_v1_hardening.sql",
+      "sha256": "558ee9ca87205d69c93b4e63f9761101fdf9e5a980d603522ddc7f2f293f05b4",
+      "size_bytes": 23310
+    },
+    {
+      "migration": "20260901230000_organizational_reading_engine_v1.sql",
+      "sha256": "ff703a2f0152a1b9264474e113d50dba0e0c4396c3df338bfbee997a324f49f8",
+      "size_bytes": 19978
+    },
+    {
+      "migration": "20260901233000_organizational_reading_sources_hardening.sql",
+      "sha256": "ccacfa675a0b92bebac64f66945a3c58532150c6ed23e1d7ef87dca81f9ceff5",
+      "size_bytes": 2350
+    },
+    {
+      "migration": "20260901240000_evidence_recommendation_operational_v1.sql",
+      "sha256": "21c0b66ff077d7da448f1d28bfdc337b642fc2638fdcdd6ffbb167923d0e3c23",
+      "size_bytes": 27950
+    },
+    {
+      "migration": "20260902000000_classic_dho_access_people_wiring_v1.sql",
+      "sha256": "f138ed4cfeaa711fe087e739595443e0ad2695ddb3d9a2334a0562ac9fffd0a2",
+      "size_bytes": 19476
+    },
+    {
+      "migration": "20260902120000_competency_cycle_assessment_v1.sql",
+      "sha256": "867cadee3822dfa08872a415a62ab6979a1866b792dd41e897d25c3f64f24834",
+      "size_bytes": 33601
+    },
+    {
+      "migration": "20260905010000_feedback_360_evolution_v1.sql",
+      "sha256": "1bb534e12f99639c99eb383b386846bd4ce4354e51708b83c93569a1fd2caa22",
+      "size_bytes": 31304
+    },
+    {
+      "migration": "20260908100000_pdi_development_v1.sql",
+      "sha256": "7b17f2a8ce55265001e4b9e223a786fc2048ebe79d3de30703ec5a46100dfd32",
+      "size_bytes": 43729
+    },
+    {
+      "migration": "20260911100000_signal_status_default_hardening_v1.sql",
+      "sha256": "26f0ddbb7f1770a573b6e44e9dcfe2eb47895b5210182034b58b15084139672a",
+      "size_bytes": 1021
+    },
+    {
+      "migration": "20260911110000_position_competency_scope_hardening_v1.sql",
+      "sha256": "a4eecc56679480da6134e7952548016baaba3f41dea278b5077e07915b17d6bb",
+      "size_bytes": 1313
+    },
+    {
+      "migration": "20260911120000_cca_aggregate_execute_hardening_v1.sql",
+      "sha256": "b7a942af486deb1c0058104ab8e36b3e4f98cfe18d8008a4a214fda038cf84da",
+      "size_bytes": 338
+    },
+    {
+      "migration": "20260911130000_feedback_360_execute_hardening_v1.sql",
+      "sha256": "1171ae102b45c85b57dca794989e68365416267318d6fd1e66b17987899d5e7a",
+      "size_bytes": 1201
+    },
+    {
+      "migration": "20260911140000_recommendation_intervention_dml_hardening_v1.sql",
+      "sha256": "7245e810da10a3eb656604f432398dbee164b75d821a61e640074a251fe4fca4",
+      "size_bytes": 344
+    },
+    {
+      "migration": "20260912100000_data_architecture_p0_event_capture_v1.sql",
+      "sha256": "e7539af5fa0bd611a9f87e6e63eae644985d8c33135bc494c4fdb56c74490d6d",
+      "size_bytes": 29640
+    }
+  ],
+  "bundle_sha256": "b5d73a1c6d07d93ff7cf11ed6ec48cb6ca1775cfe14d30b4f5ea5f879f7914fd",
+  "bundle_size_bytes": 342438,
+  "total_migration_bytes": 337570,
+  "atomic_compatibility": "PASS",
+  "generated_at": "2026-09-13T21:26:56Z"
+}
