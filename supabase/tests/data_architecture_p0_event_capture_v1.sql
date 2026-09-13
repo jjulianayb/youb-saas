@@ -2,16 +2,23 @@
 -- All fixtures are fictitious and rolled back.
 begin;
 
+create temp table p0_auth_users as
+select id, row_number() over (order by created_at, id) as n
+from auth.users
+limit 2;
+do $$ begin if (select count(*) from p0_auth_users) < 2 then raise exception 'P0 suite requires two auth users'; end if; end $$;
+grant select on p0_auth_users to authenticated;
+
 insert into public.organizations(id,name,slug,plan,status) values
  ('e9000000-0000-0000-0000-000000000001','P0 Event Org','p0-event-org','essencial','active');
-insert into public.memberships(organization_id,user_id,role) values
- ('e9000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','admin_youb'),
- ('e9000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','rh');
+insert into public.memberships(organization_id,user_id,role)
+select 'e9000000-0000-0000-0000-000000000001',id,case when n=1 then 'admin_youb' else 'rh' end
+from p0_auth_users;
 insert into public.organizations(id,name,slug,plan,status) values
  ('e9000000-0000-0000-0000-000000000002','P0 Other Org','p0-other-org','essencial','active');
 insert into public.employees(id,organization_id,auth_user_id,full_name,email,status) values
- ('e9000000-0000-0000-0000-000000000011','e9000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','P0 Admin','p0-admin@example.invalid','active'),
- ('e9000000-0000-0000-0000-000000000012','e9000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','P0 Manager One','p0-manager-one@example.invalid','active'),
+ ('e9000000-0000-0000-0000-000000000011','e9000000-0000-0000-0000-000000000001',(select id from p0_auth_users where n=1),'P0 Admin','p0-admin@example.invalid','active'),
+ ('e9000000-0000-0000-0000-000000000012','e9000000-0000-0000-0000-000000000001',(select id from p0_auth_users where n=2),'P0 Manager One','p0-manager-one@example.invalid','active'),
  ('e9000000-0000-0000-0000-000000000013','e9000000-0000-0000-0000-000000000001',null,'P0 Employee','p0-employee@example.invalid','active'),
  ('e9000000-0000-0000-0000-000000000021','e9000000-0000-0000-0000-000000000002',null,'Other Employee','other@example.invalid','active');
 insert into public.areas(id,organization_id,name) values
@@ -43,7 +50,7 @@ insert into public.organizational_memory_relations(
  ('e9000000-0000-0000-0000-000000000001','employee','e9000000-0000-0000-0000-000000000013','position','e9000000-0000-0000-0000-000000000201','occupies','fact','2026-01-01','service','fixture'),
  ('e9000000-0000-0000-0000-000000000001','employee','e9000000-0000-0000-0000-000000000013','employee','e9000000-0000-0000-0000-000000000012','reports_to','fact','2026-01-01','service','fixture');
 
-set local request.jwt.claim.sub = '10000000-0000-0000-0000-000000000001';
+select set_config('request.jwt.claim.sub',(select id::text from p0_auth_users where n=1),true);
 set local role authenticated;
 
 select public.update_employee_profile(
@@ -59,7 +66,7 @@ begin
  if n<>4 then raise exception 'employee structural event count expected 4, got %',n; end if;
  if (select count(*) from public.organizational_memory_relations where organization_id='e9000000-0000-0000-0000-000000000001' and source_entity_id='e9000000-0000-0000-0000-000000000013' and relationship_type in ('belongs_to','occupies','reports_to') and valid_until is null)<>3 then raise exception 'current employee relation projection is incomplete'; end if;
  if (select count(*) from public.organizational_memory_relations where organization_id='e9000000-0000-0000-0000-000000000001' and source_entity_id='e9000000-0000-0000-0000-000000000013' and relationship_type in ('belongs_to','occupies','reports_to') and valid_until is not null)<>3 then raise exception 'prior employee relation intervals were not closed'; end if;
- if exists(select 1 from public.organizational_events where entity_id='e9000000-0000-0000-0000-000000000013' and actor_user_id<>'10000000-0000-0000-0000-000000000001') then raise exception 'event actor was not derived from auth.uid()'; end if;
+ if exists(select 1 from public.organizational_events where entity_id='e9000000-0000-0000-0000-000000000013' and actor_user_id<>(select id from p0_auth_users where n=1)) then raise exception 'event actor was not derived from auth.uid()'; end if;
 end $$;
 
 -- Idempotent profile replay does not duplicate events.
