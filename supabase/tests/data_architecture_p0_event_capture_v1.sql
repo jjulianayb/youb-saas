@@ -23,10 +23,12 @@ insert into public.employees(id,organization_id,auth_user_id,full_name,email,sta
  ('e9000000-0000-0000-0000-000000000021','e9000000-0000-0000-0000-000000000002',null,'Other Employee','other@example.invalid','active');
 insert into public.areas(id,organization_id,name) values
  ('e9000000-0000-0000-0000-000000000101','e9000000-0000-0000-0000-000000000001','Area One'),
- ('e9000000-0000-0000-0000-000000000102','e9000000-0000-0000-0000-000000000001','Area Two');
+ ('e9000000-0000-0000-0000-000000000102','e9000000-0000-0000-0000-000000000001','Area Two'),
+ ('e9000000-0000-0000-0000-000000000111','e9000000-0000-0000-0000-000000000002','Other Area');
 insert into public.positions(id,organization_id,name,level) values
  ('e9000000-0000-0000-0000-000000000201','e9000000-0000-0000-0000-000000000001','Position One','Pleno'),
- ('e9000000-0000-0000-0000-000000000202','e9000000-0000-0000-0000-000000000001','Position Two','Sênior');
+ ('e9000000-0000-0000-0000-000000000202','e9000000-0000-0000-0000-000000000001','Position Two','Sênior'),
+ ('e9000000-0000-0000-0000-000000000211','e9000000-0000-0000-0000-000000000002','Other Position','Pleno');
 insert into public.competencies(id,organization_id,name,active) values
  ('e9000000-0000-0000-0000-000000000301','e9000000-0000-0000-0000-000000000001','Competency One',true);
 insert into public.position_competencies(id,organization_id,position_id,competency_id,expected_level,active) values
@@ -49,6 +51,19 @@ insert into public.organizational_memory_relations(
  ('e9000000-0000-0000-0000-000000000001','employee','e9000000-0000-0000-0000-000000000013','area','e9000000-0000-0000-0000-000000000101','belongs_to','fact','2026-01-01','service','fixture'),
  ('e9000000-0000-0000-0000-000000000001','employee','e9000000-0000-0000-0000-000000000013','position','e9000000-0000-0000-0000-000000000201','occupies','fact','2026-01-01','service','fixture'),
  ('e9000000-0000-0000-0000-000000000001','employee','e9000000-0000-0000-0000-000000000013','employee','e9000000-0000-0000-0000-000000000012','reports_to','fact','2026-01-01','service','fixture');
+
+create or replace function pg_temp.p0_fail_employee_created_event() returns trigger
+language plpgsql as $$
+begin
+  if current_setting('p0.force_employee_create_failure',true)='on' and new.event_type='employee_created' then
+    raise exception 'p0 forced employee event failure';
+  end if;
+  return new;
+end;
+$$;
+create trigger p0_fail_employee_created_event
+before insert on public.organizational_events
+for each row execute function pg_temp.p0_fail_employee_created_event();
 
 select set_config('request.jwt.claim.sub',(select id::text from p0_auth_users where p0_auth_users.n=1),true);
 set local role authenticated;
@@ -76,6 +91,79 @@ select public.update_employee_profile(
  'e9000000-0000-0000-0000-000000000011','inactive'
 );
 do $$ begin if (select count(*) from public.organizational_events where entity_id='e9000000-0000-0000-0000-000000000013')<>4 then raise exception 'idempotent profile replay duplicated events'; end if; end $$;
+
+-- Creation is a controlled domain operation with a single event and initial graph projection.
+do $$
+declare
+  v_created public.employees%rowtype;
+  v_retry public.employees%rowtype;
+  v_event public.organizational_events%rowtype;
+  v_before timestamptz := clock_timestamp();
+  v_correlation uuid := 'e9000000-0000-0000-0000-000000009901';
+begin
+  select * into strict v_created from public.create_employee_profile(
+    'e9000000-0000-0000-0000-000000000001','P0 Created Employee',null,
+    'e9000000-0000-0000-0000-000000000102','e9000000-0000-0000-0000-000000000202',
+    'senior','e9000000-0000-0000-0000-000000000012','active',v_correlation
+  );
+  if v_created.auth_user_id is not null then raise exception 'employee creation unexpectedly required an Auth user'; end if;
+  if v_created.created_at < v_before then raise exception 'created_at predates the creation operation'; end if;
+  if (select count(*) from public.organizational_events where entity_id=v_created.id and event_type='employee_created')<>1 then raise exception 'employee creation did not generate exactly one employee_created event'; end if;
+  select * into strict v_event from public.organizational_events where entity_id=v_created.id and event_type='employee_created';
+  if v_event.actor_user_id<>(select id from p0_auth_users where p0_auth_users.n=1) then raise exception 'employee_created actor was not derived from auth.uid()'; end if;
+  if v_event.correlation_id<>v_correlation then raise exception 'employee_created correlation_id was not preserved'; end if;
+  if v_event.occurred_at < v_before or v_event.occurred_at > clock_timestamp() then raise exception 'employee_created occurred_at is outside the creation interval'; end if;
+  if v_event.payload ? 'full_name' or v_event.payload ? 'email' then raise exception 'employee_created payload contains unnecessary PII'; end if;
+  if not (v_event.payload ? 'status' and v_event.payload ? 'area_id' and v_event.payload ? 'position_id' and v_event.payload ? 'manager_employee_id' and v_event.payload ? 'seniority') then raise exception 'employee_created payload is missing contract fields'; end if;
+  if (select count(*) from public.organizational_memory_relations where source_entity_id=v_created.id and valid_until is null)<>3 then raise exception 'initial employee relations are incomplete'; end if;
+  if not exists(select 1 from public.organizational_memory_relations where source_entity_id=v_created.id and relationship_type='belongs_to' and target_entity_id='e9000000-0000-0000-0000-000000000102' and valid_from=v_event.occurred_at and source_id=v_event.id::text) then raise exception 'initial belongs_to relation is missing or misdated'; end if;
+  if not exists(select 1 from public.organizational_memory_relations where source_entity_id=v_created.id and relationship_type='occupies' and target_entity_id='e9000000-0000-0000-0000-000000000202' and valid_from=v_event.occurred_at and source_id=v_event.id::text) then raise exception 'initial occupies relation is missing or misdated'; end if;
+  if not exists(select 1 from public.organizational_memory_relations where source_entity_id=v_created.id and relationship_type='reports_to' and target_entity_id='e9000000-0000-0000-0000-000000000012' and valid_from=v_event.occurred_at and source_id=v_event.id::text) then raise exception 'initial reports_to relation is missing or misdated'; end if;
+  select * into strict v_retry from public.create_employee_profile(
+    'e9000000-0000-0000-0000-000000000001','P0 Created Employee Retry','should-not-be-used@example.invalid',
+    'e9000000-0000-0000-0000-000000000101','e9000000-0000-0000-0000-000000000201',
+    'junior','e9000000-0000-0000-0000-000000000012','inactive',v_correlation
+  );
+  if v_retry.id<>v_created.id then raise exception 'creation retry was not idempotent'; end if;
+  if (select count(*) from public.organizational_events where entity_id=v_created.id and event_type='employee_created')<>1 then raise exception 'creation retry duplicated employee_created'; end if;
+end $$;
+
+create or replace function pg_temp.try_create_employee(p_org uuid,p_area uuid,p_position uuid,p_manager uuid) returns boolean
+language plpgsql security invoker as $$
+begin
+  perform public.create_employee_profile(p_org,'P0 Invalid Create',null,p_area,p_position,null,p_manager,'active',gen_random_uuid());
+  return true;
+exception when others then return false;
+end $$;
+do $$ begin
+  if pg_temp.try_create_employee('e9000000-0000-0000-0000-000000000001','e9000000-0000-0000-0000-000000000111',null,null) then raise exception 'cross-tenant area was accepted during employee creation'; end if;
+  if pg_temp.try_create_employee('e9000000-0000-0000-0000-000000000001',null,'e9000000-0000-0000-0000-000000000211',null) then raise exception 'cross-tenant position was accepted during employee creation'; end if;
+  if pg_temp.try_create_employee('e9000000-0000-0000-0000-000000000001',null,null,'e9000000-0000-0000-0000-000000000021') then raise exception 'cross-tenant manager was accepted during employee creation'; end if;
+end $$;
+
+-- A failure after the employee insert rolls back the employee and event together.
+do $$
+declare v_failed boolean := false; v_email text := 'p0-rollback@example.invalid';
+begin
+  perform set_config('p0.force_employee_create_failure','on',true);
+  begin
+    perform public.create_employee_profile('e9000000-0000-0000-0000-000000000001','P0 Rollback Employee',v_email,null,null,null,null,'active','e9000000-0000-0000-0000-000000009902');
+  exception when others then v_failed := true;
+  end;
+  perform set_config('p0.force_employee_create_failure','off',true);
+  if not v_failed then raise exception 'forced event failure was not raised'; end if;
+  if exists(select 1 from public.employees where email=v_email) then raise exception 'employee survived event failure'; end if;
+  if exists(select 1 from public.organizational_events where source_id='create_employee_profile' and correlation_id='e9000000-0000-0000-0000-000000009902') then raise exception 'employee_created event survived rollback'; end if;
+end $$;
+
+create or replace function pg_temp.try_direct_employee_insert() returns boolean
+language plpgsql security invoker as $$
+begin
+  insert into public.employees(organization_id,full_name,status) values('e9000000-0000-0000-0000-000000000001','P0 Direct Insert Must Fail','active');
+  return true;
+exception when others then return false;
+end $$;
+do $$ begin if pg_temp.try_direct_employee_insert() then raise exception 'direct employee INSERT bypassed create_employee_profile'; end if; end $$;
 
 -- Direct employee update is blocked; cross-tenant domain update is blocked without changing state.
 create or replace function pg_temp.try_direct_employee_update() returns boolean language plpgsql security invoker as $$ begin update public.employees set status='active' where id='e9000000-0000-0000-0000-000000000013'; return true; exception when others then return false; end $$;

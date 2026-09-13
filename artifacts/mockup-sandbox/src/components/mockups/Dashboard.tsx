@@ -252,7 +252,8 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
         await apiRequest(session, "rpc/update_employee_profile", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ p_employee_id: editingEmployee, p_full_name: payload.full_name, p_email: payload.email, p_area_id: payload.area_id, p_position_id: payload.position_id, p_seniority: payload.seniority, p_manager_employee_id: payload.manager_employee_id, p_status: null }) });
         setNotice("Dados do colaborador atualizados.");
       } else {
-        await apiRequest(session, "employees", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, ...payload, status: "active" }) });
+        const creationCorrelationId = crypto.randomUUID();
+        await apiRequest(session, "rpc/create_employee_profile", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ p_organization_id: organization.id, p_full_name: payload.full_name, p_email: payload.email, p_area_id: payload.area_id, p_position_id: payload.position_id, p_seniority: payload.seniority, p_manager_employee_id: payload.manager_employee_id, p_status: "active", p_correlation_id: creationCorrelationId }) });
         setNotice("Colaborador adicionado à equipe.");
       }
       cancelEditEmployee(); await loadData();

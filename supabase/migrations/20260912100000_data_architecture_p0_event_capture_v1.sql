@@ -280,6 +280,95 @@ revoke update on public.employees from authenticated;
 revoke all on function public.update_employee_profile(uuid,text,text,uuid,uuid,text,uuid,text) from public;
 grant execute on function public.update_employee_profile(uuid,text,text,uuid,uuid,text,uuid,text) to authenticated;
 
+create or replace function public.create_employee_profile(
+  p_organization_id uuid,
+  p_full_name text,
+  p_email text default null,
+  p_area_id uuid default null,
+  p_position_id uuid default null,
+  p_seniority text default null,
+  p_manager_employee_id uuid default null,
+  p_status text default 'active',
+  p_correlation_id uuid default null
+)
+returns public.employees
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_employee public.employees%rowtype;
+  v_existing_id uuid;
+  v_correlation uuid := coalesce(p_correlation_id,gen_random_uuid());
+  v_employee_id uuid := gen_random_uuid();
+  v_now timestamptz := clock_timestamp();
+  v_event uuid;
+  v_status text := coalesce(p_status,'active');
+begin
+  if auth.uid() is null or p_organization_id is null or not public.has_org_role(p_organization_id,array['admin_youb','diretoria','rh']) then
+    raise exception 'employee creation is not authorized' using errcode='42501';
+  end if;
+  if p_correlation_id is not null then
+    select oe.entity_id into v_existing_id
+    from public.organizational_events oe
+    where oe.organization_id=p_organization_id
+      and oe.event_type='employee_created'
+      and oe.entity_type='employee'
+      and oe.source_type='service'
+      and oe.source_id='create_employee_profile'
+      and oe.correlation_id=p_correlation_id
+    limit 1;
+    if v_existing_id is not null then
+      select e.* into strict v_employee from public.employees e where e.organization_id=p_organization_id and e.id=v_existing_id;
+      return v_employee;
+    end if;
+  end if;
+  if nullif(btrim(coalesce(p_full_name,'')),'') is null then
+    raise exception 'employee name is required' using errcode='22023';
+  end if;
+  if v_status not in ('active','inactive') then
+    raise exception 'employee status is invalid' using errcode='23514';
+  end if;
+  if p_seniority is not null and p_seniority not in ('junior','pleno','senior') then
+    raise exception 'employee seniority is invalid' using errcode='23514';
+  end if;
+  if p_area_id is not null and not public._organizational_entity_belongs_to_org(p_organization_id,'area',p_area_id) then
+    raise exception 'area is outside the employee tenant' using errcode='42501';
+  end if;
+  if p_position_id is not null and not public._organizational_entity_belongs_to_org(p_organization_id,'position',p_position_id) then
+    raise exception 'position is outside the employee tenant' using errcode='42501';
+  end if;
+  if p_manager_employee_id is not null then
+    if p_manager_employee_id=v_employee_id or not public._organizational_entity_belongs_to_org(p_organization_id,'employee',p_manager_employee_id) then
+      raise exception 'manager is invalid for the employee tenant' using errcode='23514';
+    end if;
+  end if;
+  insert into public.employees(id,organization_id,full_name,email,area_id,position_id,seniority,manager_employee_id,status,created_at)
+  values(v_employee_id,p_organization_id,btrim(p_full_name),nullif(btrim(p_email),''),p_area_id,p_position_id,p_seniority,p_manager_employee_id,v_status,v_now)
+  returning * into strict v_employee;
+  v_event := public._append_organizational_event(
+    p_organization_id,'employee_created','employee',v_employee.id,v_now,'service','create_employee_profile','standard',
+    jsonb_build_object('status',v_employee.status,'area_id',v_employee.area_id,'position_id',v_employee.position_id,'manager_employee_id',v_employee.manager_employee_id,'seniority',v_employee.seniority),
+    v_correlation
+  );
+  if v_employee.area_id is not null then
+    perform public._sync_employee_temporal_relation(p_organization_id,v_employee.id,'belongs_to','area',v_employee.area_id,v_now,v_event,v_correlation);
+  end if;
+  if v_employee.position_id is not null then
+    perform public._sync_employee_temporal_relation(p_organization_id,v_employee.id,'occupies','position',v_employee.position_id,v_now,v_event,v_correlation);
+  end if;
+  if v_employee.manager_employee_id is not null then
+    perform public._sync_employee_temporal_relation(p_organization_id,v_employee.id,'reports_to','employee',v_employee.manager_employee_id,v_now,v_event,v_correlation);
+  end if;
+  return v_employee;
+end;
+$$;
+
+-- Employee creation is controlled by the domain RPC; employees may still have no auth_user_id.
+revoke insert on public.employees from authenticated;
+revoke all on function public.create_employee_profile(uuid,text,text,uuid,uuid,text,uuid,text,uuid) from public;
+grant execute on function public.create_employee_profile(uuid,text,text,uuid,uuid,text,uuid,text,uuid) to authenticated;
+
 -- Assessment mapping and score writes already use domain RPCs. Add event capture there.
 create or replace function public.cca_update_position_competency(p_id uuid,p_expected_level smallint,p_active boolean)
 returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
