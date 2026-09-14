@@ -73,6 +73,8 @@ insert into public.ambient_observation_reviews(id,organization_id,observation_id
 values ((select value from ctx where key='review_personal'),(select value from ctx where key='org_a'),(select value from ctx where key='obs_personal'),'confirm',auth.uid(),'Owner confirmation');
 select pg_temp.assert_true('authorized owner review passes', exists(select 1 from public.ambient_observation_reviews where id=(select value from ctx where key='review_personal')));
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+insert into public.ambient_observation_reviews(id,organization_id,observation_id,review_type,reviewer_user_id,reason)
+values ((select value from ctx where key='review_confirm'),(select value from ctx where key='org_a'),(select value from ctx where key='obs_inferred'),'confirm',auth.uid(),'Confirma a observação de trabalho, não causalidade');
 insert into public.ambient_observation_reviews(id,organization_id,observation_id,review_type,reviewer_user_id,correction_summary,correction_value,reason)
 values ((select value from ctx where key='review_correct'),(select value from ctx where key='org_a'),(select value from ctx where key='obs_inferred'),'correct','10000000-0000-0000-0000-000000000001','Concentração observada em apenas um período','{"window":"one-period"}','Histórico preservado');
 insert into public.ambient_observations(id,organization_id,source_registry_id,observation_type,epistemic_kind,summary,observed_at,subject_type,subject_ref,visibility_scope,authorized_roles,authorized_user_ids,provenance,structured_value,actor_user_id,created_by_user_id,supersedes_observation_id)
