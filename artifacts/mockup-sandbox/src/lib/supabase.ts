@@ -25,8 +25,9 @@ export type AuthResponse = {
 };
 
 const viteEnv = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env ?? {};
-const supabaseUrl = (viteEnv.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "");
-const supabaseAnonKey = viteEnv.VITE_SUPABASE_ANON_KEY as string | undefined;
+const processEnv = (globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+const supabaseUrl = ((viteEnv.VITE_SUPABASE_URL as string | undefined) ?? processEnv.VITE_SUPABASE_URL)?.replace(/\/$/, "");
+const supabaseAnonKey = (viteEnv.VITE_SUPABASE_ANON_KEY as string | undefined) ?? processEnv.VITE_SUPABASE_ANON_KEY;
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 function getErrorMessage(body: AuthResponse): string { return body.error_description ?? body.message ?? body.msg ?? body.hint ?? "Não foi possível concluir a operação."; }
 async function authRequest(path: string, payload: Record<string, unknown>): Promise<AuthResponse> { if (!isSupabaseConfigured) throw new Error("O ambiente ainda não está conectado ao Supabase."); const response = await fetch(`${supabaseUrl}/auth/v1/${path}`, { method: "POST", headers: { apikey: supabaseAnonKey!, "Content-Type": "application/json" }, body: JSON.stringify(payload) }); const body = (await response.json()) as AuthResponse; if (!response.ok) throw new Error(getErrorMessage(body)); return body; }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { appPath } from "./app-paths";
-import { commercialExperienceForRole, resolveOrganizationSelection, restoreSession, sessionFromAuth, sessionNeedsRefresh, type OrganizationSummary } from "./supabase";
+import { commercialExperienceForRole, refreshSession, resolveOrganizationSelection, restoreSession, sessionFromAuth, sessionNeedsRefresh, type OrganizationSummary } from "./supabase";
 
 const organization = (id: string): OrganizationSummary => ({ id, name: `Empresa ${id}`, slug: `empresa-${id}` });
 const user = { id: "10000000-0000-0000-0000-000000000001", email: "test@example.invalid" };
@@ -41,22 +41,34 @@ test("D — a valid access token is not refreshed unnecessarily", async () => {
   assert.equal(store.has("youb-session"), true);
 });
 
-test("E — refreshed auth response preserves refresh token, token type and expiry", () => {
-  const refreshed = sessionFromAuth({ access_token: "new-access", expires_in: 1800, token_type: "Bearer", user }, "old-refresh");
-  assert.equal(refreshed.access_token, "new-access");
-  assert.equal(refreshed.refresh_token, "old-refresh");
-  assert.equal(refreshed.token_type, "Bearer");
-  assert.ok(refreshed.expires_at && refreshed.expires_at > Math.floor(Date.now() / 1000));
+test("E — expired access token refreshes and preserves the returned session contract", async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async () => ({ ok: true, json: async () => ({ access_token: "new-access", expires_in: 1800, token_type: "Bearer", user }) })) as typeof fetch;
+  try {
+    const refreshed = await refreshSession({ access_token: "expired", refresh_token: "old-refresh", expires_at: 1, user });
+    assert.equal(refreshed.access_token, "new-access");
+    assert.equal(refreshed.refresh_token, "old-refresh");
+    assert.equal(refreshed.token_type, "Bearer");
+    assert.ok(refreshed.expires_at && refreshed.expires_at > Math.floor(Date.now() / 1000));
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
 });
 
 test("F — an invalid refresh fails closed and removes local session and organization", async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async () => { throw new Error("invalid refresh"); }) as typeof fetch;
   const store = installLocalStorage({
     "youb-session": JSON.stringify({ access_token: "expired", refresh_token: "invalid", expires_at: 1, user }),
     "youb-organization": JSON.stringify(organization("one")),
   });
-  assert.equal(await restoreSession(), null);
-  assert.equal(store.has("youb-session"), false);
-  assert.equal(store.has("youb-organization"), false);
+  try {
+    assert.equal(await restoreSession(), null);
+    assert.equal(store.has("youb-session"), false);
+    assert.equal(store.has("youb-organization"), false);
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
 });
 
 test("G — signup sessions persist the same expiry contract as login sessions", () => {
