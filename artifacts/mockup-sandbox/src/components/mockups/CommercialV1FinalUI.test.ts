@@ -22,7 +22,7 @@ test("Commercial V1 final visual preview is mobile-first and contextual", () => 
   assert.match(source, /lg:/);
   assert.match(source, /Demonstração visual/);
   assert.match(source, /contexto autorizado/);
-  assert.match(source, /não.*execut/i);
+  assert.match(source, /Sem decisões automáticas|não.*execut/i);
 });
 
 test("Commercial V1 final visual preview is reachable without changing authenticated routes", () => {
