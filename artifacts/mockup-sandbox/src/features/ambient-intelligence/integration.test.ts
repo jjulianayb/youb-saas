@@ -104,3 +104,11 @@ test("integration keeps the approved regression commands and SQL suites", () => 
   assert.match(sqlScript, /ambient_intelligence_foundation_v1/);
   assert.match(sqlScript, /data_architecture_p0/);
 });
+
+test("integrated Leader Home keeps responsive and basic accessibility contracts", () => {
+  const source = manager();
+  assert.match(source, /sm:|md:|lg:/);
+  assert.match(source, /focus-visible:ring/);
+  assert.match(source, /aria-live/);
+  assert.match(source, /type=\"button\"/);
+});
