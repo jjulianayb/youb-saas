@@ -6,7 +6,12 @@ import { EMPTY_UUID, employeeQueryFilters, feedbackRelationFilter, relatedQueryF
 import CompetencyCycleAssessment from "./CompetencyCycleAssessment";
 import Feedback360Evolution from "./Feedback360Evolution";
 import PdiDevelopment from "./PdiDevelopment";
+import BeeShell from "./BeeShell";
+import ManagerHome from "./ManagerHome";
+import RhHome from "./RhHome";
 import { pdiRpc } from "../../features/pdi-development/service";
+import { readAmbientFoundation } from "../../features/ambient-intelligence/service";
+import { prepareAmbientBeeReadModel, type AmbientBeeReadModel } from "../../features/ambient-intelligence/runtime";
 
 type Organization = { id: string; name: string; slug: string };
 type UserRole = "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador";
@@ -149,6 +154,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const [pdiDueDate, setPdiDueDate] = useState("");
   const [assessmentEmployee, setAssessmentEmployee] = useState("");
   const [assessmentCycle, setAssessmentCycle] = useState("");
+  const [ambientModel, setAmbientModel] = useState<AmbientBeeReadModel | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -196,6 +202,16 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
       setOrganizationApprovers(approverRows);
       setDisciplinaryPolicies(policyRows);
       setCheckins(checkinRows);
+      setAmbientModel(null);
+      if (role === "gestor") {
+        try {
+          const ambientFoundation = await readAmbientFoundation({ organizationId: organization.id, userId: session.user.id, role: "gestor", employeeId: ownEmployeeId, session });
+          setAmbientModel(prepareAmbientBeeReadModel({ organizationId: organization.id, userId: session.user.id, role: "gestor", employeeId: ownEmployeeId }, ambientFoundation));
+        } catch {
+          // The approved local contracts remain optional until the hosted migration is authorized.
+          setAmbientModel(null);
+        }
+      }
       const actionIds = disciplinaryRows.map((action) => action.id);
       const approvalScope = actionIds.length ? `action_id=in.(${actionIds.join(",")})` : "id=eq.00000000-0000-0000-0000-000000000000";
       const approvalRows = await apiRequest<DisciplinaryApproval[]>(session, `disciplinary_action_approvals?select=id,action_id,approver_type,status,note,reviewed_at&organization_id=eq.${org}&${approvalScope}&order=created_at.desc`);
@@ -366,14 +382,14 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   }
 
   const navItems: Array<{ id: View; label: string; icon: string }> = [
-    { id: "overview", label: "Visão geral", icon: "⌂" },
-    { id: "team", label: "Equipe", icon: "♙" },
-    { id: "employee-history", label: "Histórico individual", icon: "▤" },
-    { id: "checkins", label: "Clima & check-ins", icon: "♥" },
-    { id: "competency-journey", label: "Jornada V1", icon: "◆" },
+    { id: "overview", label: userRole === "gestor" ? "Meu dia" : userRole === "rh" ? "Intelligence Workspace" : "Hoje", icon: "⌂" },
+    { id: "team", label: userRole === "gestor" ? "Meu time" : "Equipe", icon: "♙" },
+    { id: "employee-history", label: userRole === "gestor" ? "Pessoas do time" : "Histórico individual", icon: "▤" },
+    { id: "checkins", label: userRole === "gestor" ? "Sinais do time" : "Clima & check-ins", icon: "♥" },
+    { id: "competency-journey", label: userRole === "gestor" ? "Evolução da liderança" : "Desenvolvimento", icon: "◆" },
     { id: "feedback-360", label: "Feedback 360", icon: "◈" },
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
-    { id: "pdis", label: "PDIs", icon: "◎" },
+    { id: "pdis", label: userRole === "gestor" ? "Desenvolvimento do time" : "PDIs", icon: "◎" },
   ];
   const visibleNavItems = navItems.filter((item) => {
     if (!userRole || userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh") return true;
@@ -397,10 +413,10 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
         </aside>
 
         <section className="flex-1 p-5 sm:p-8 lg:p-10">
-          <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel de pessoas</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 text-sm text-slate-500">Acompanhe o desenvolvimento da sua equipe em um só lugar.</p></div><div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><span className="text-slate-400">Perfil </span><strong className="text-[#1e3a6e]">{roleLabel(userRole)}</strong><span className="mx-2 text-slate-300">·</span><span className="text-slate-400">Plano </span><strong className="text-[#1e3a6e]">Essencial</strong></div></header>
+          <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-600">Intelligence Workspace · {organization.name}</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">O que merece sua atenção agora — com pessoas, desenvolvimento e contexto no mesmo lugar.</p></div><div className="flex items-center gap-3"><BeeShell surface="light" context={{ userName: firstName, organizationName: organization.name, role: userRole ?? "authenticated", capabilities: ["read:authorized-context", "recommend:review-only"], employeeLinked: Boolean(authenticatedEmployeeId), screen: "intelligence-workspace" }} /><div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><span className="text-slate-400">Perfil </span><strong className="text-[#30367a]">{roleLabel(userRole)}</strong><span className="mx-2 text-slate-300">·</span><span className="text-slate-400">Plano </span><strong className="text-[#30367a]">Essencial</strong></div></div></header>
           <div className="mx-auto mt-8 max-w-6xl">{notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}{error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
             {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Carregando os dados da empresa...</div> : <>
-              {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
+              {view === "overview" && userRole === "gestor" ? <ManagerHome displayName={String(session.user.user_metadata?.full_name ?? session.user.email ?? "Líder")} organizationName={organization.name} beeContext={{ userName: firstName, organizationName: organization.name, role: "gestor", capabilities: ["read:team-scope", "recommend:review-only"], employeeLinked: Boolean(authenticatedEmployeeId), screen: "manager-home" }} data={{ employees, feedbacks, pdis, checkins, assessments }} ambient={ambientModel ?? undefined} onView={(nextView) => setView(nextView)} /> : view === "overview" && userRole === "rh" ? <RhHome displayName={String(session.user.user_metadata?.full_name ?? session.user.email ?? "RH")} organizationName={organization.name} beeContext={{ userName: firstName, organizationName: organization.name, role: "rh", capabilities: ["read:organization", "recommend:review-only"], employeeLinked: Boolean(authenticatedEmployeeId), screen: "intelligence-workspace" }} counts={{ employees: employees.length, feedbacks: feedbacks.length, pdis: pendingPdis, cycles: cycles.length }} onView={(nextView) => setView(nextView)} /> : view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
               {view === "competency-journey" && userRole && userRole !== "colaborador" && <CompetencyCycleAssessment session={session} organization={organization} role={userRole} employeeId={authenticatedEmployeeId} />}
               {view === "feedback-360" && userRole && <Feedback360Evolution session={session} organization={organization} role={userRole} employeeId={authenticatedEmployeeId} />}
               {canManageStructure && view === "team" && <ModuleSection title="Equipe" description="Cadastre colaboradores, áreas e cargos para dar contexto aos ciclos e planos.">
@@ -490,3 +506,4 @@ function Overview({ employees, cycles, feedbacks, pdis, activeCycles, pendingPdi
 function ModuleSection({ title, description, children }: { title: string; description: string; children: ReactNode }) { return <div><div className="mb-6"><h2 className="text-2xl font-extrabold">{title}</h2><p className="mt-1 text-sm text-slate-500">{description}</p></div>{children}</div>; }
 function EmptyState({ text }: { text: string }) { return <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">{text}</div>; }
 function StatusPill({ status }: { status: string }) { return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${status === "active" ? "bg-emerald-100 text-emerald-700" : status === "completed" ? "bg-blue-100 text-blue-700" : status === "cancelled" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{statusLabel(status)}</span>; }
+

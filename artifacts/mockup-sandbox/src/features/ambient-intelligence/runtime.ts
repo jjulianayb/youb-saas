@@ -24,8 +24,16 @@ export type AmbientBeeReadModel = {
 function emptyBrief(context: AmbientRuntimeContext, horizon: AmbientHorizon, reason: string): AmbientAttentionBrief {
   return { organization_id: context.organizationId, owner_user_id: context.userId, horizon, context_status: "insufficient", insufficiency_reason: reason, focus_statement: null, priority_items: [], do_items: [], delegate_items: [], stop_items: [], source_observation_ids: [], generated_by: "human_reviewed_service", visibility_scope: "personal", authorized_roles: [], authorized_user_ids: [context.userId] };
 }
+function audienceAllows(context: AmbientRuntimeContext, roles: readonly string[], userIds: readonly string[]): boolean {
+  return userIds.includes(context.userId) || roles.includes(context.role);
+}
+
+export function filterAmbientObservations(context: AmbientRuntimeContext, observations: AmbientFoundationRead["observations"]): AmbientFoundationRead["observations"] {
+  return observations.filter((item) => item.organization_id === context.organizationId && (item.subject_owner_user_id === context.userId || audienceAllows(context, item.authorized_roles, item.authorized_user_ids)));
+}
+
 function allowedItems(context: AmbientRuntimeContext, items: readonly AmbientAttentionItem[]): AmbientAttentionItem[] {
-  return items.filter((item) => item.organization_id === context.organizationId && item.owner_user_id === context.userId && item.human_required === true && !isHighStakesAutonomy(item));
+  return items.filter((item) => item.organization_id === context.organizationId && item.human_required === true && !isHighStakesAutonomy(item) && (item.owner_user_id === context.userId || (item.visibility_scope === "organizational" && audienceAllows(context, item.authorized_roles, item.authorized_user_ids))));
 }
 function briefFromItems(context: AmbientRuntimeContext, items: readonly AmbientAttentionItem[], horizon: AmbientHorizon): AmbientAttentionBrief {
   const selected = allowedItems(context, items).filter((item) => item.horizon === horizon && item.status === "open").sort((a, b) => a.priority - b.priority).slice(0, 3);
@@ -33,7 +41,7 @@ function briefFromItems(context: AmbientRuntimeContext, items: readonly AmbientA
   return { organization_id: context.organizationId, owner_user_id: context.userId, horizon, context_status: "sufficient", insufficiency_reason: null, focus_statement: null, priority_items: selected.map((item) => ({ id: item.id, title: item.title, attention_type: item.attention_type, rationale: item.rationale, priority: item.priority })), do_items: selected.filter((item) => ["act", "review", "converse", "decide", "confirm"].includes(item.attention_type)).map((item) => ({ id: item.id, title: item.title })), delegate_items: selected.filter((item) => item.attention_type === "delegate").map((item) => ({ id: item.id, title: item.title })), stop_items: [], source_observation_ids: selected.flatMap((item) => item.source_observation_id ? [item.source_observation_id] : []), generated_by: "human_reviewed_service", visibility_scope: "personal", authorized_roles: [], authorized_user_ids: [context.userId] };
 }
 export function prepareAmbientBeeReadModel(context: AmbientRuntimeContext, foundation: AmbientFoundationRead): AmbientBeeReadModel {
-  const observations = foundation.observations.filter((item) => item.organization_id === context.organizationId);
+  const observations = filterAmbientObservations(context, foundation.observations);
   const attention = allowedItems(context, foundation.attention);
   const commitments = foundation.commitments.filter((item) => item.organization_id === context.organizationId && item.owner_user_id === context.userId);
   const preferences = foundation.preferences.filter((item) => item.organization_id === context.organizationId && item.user_id === context.userId).map((item) => item.preference_value);
@@ -47,3 +55,4 @@ export function selectAmbientIntent(model: AmbientBeeReadModel, intent: AmbientI
   return model.evolution;
 }
 export function canPersistAmbientText(value: unknown): boolean { return !containsHealthDiagnosis(value) && !isHighStakesAutonomy(value); }
+
