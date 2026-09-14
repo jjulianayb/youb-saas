@@ -6,7 +6,9 @@ import {
   getMyOrganization,
   getMyOrganizations,
   isSupabaseConfigured,
+  resolveOrganizationSelection,
   restoreSession,
+  sessionFromAuth,
   signIn,
   signUp,
   type SupabaseSession,
@@ -62,7 +64,7 @@ export default function Onboarding() {
         return;
       }
       const savedOrganization = window.localStorage.getItem("youb-organization");
-      const existingOrganization = availableOrganizations[0] ?? (savedOrganization ? JSON.parse(savedOrganization) as OrganizationSummary : await getMyOrganization(restoredSession));
+      const existingOrganization = resolveOrganizationSelection(availableOrganizations) ?? (savedOrganization ? JSON.parse(savedOrganization) as OrganizationSummary : await getMyOrganization(restoredSession));
       if (cancelled || !existingOrganization) return;
       setOrganization(existingOrganization);
       window.localStorage.setItem("youb-organization", JSON.stringify(existingOrganization));
@@ -90,13 +92,7 @@ export default function Onboarding() {
           setPassword("");
           return;
         }
-        const nextSession: SupabaseSession = {
-          access_token: response.access_token,
-          refresh_token: response.refresh_token,
-          expires_at: undefined,
-          token_type: "bearer",
-          user: response.user,
-        };
+        const nextSession = sessionFromAuth(response);
         setSession(nextSession);
         window.localStorage.setItem("youb-session", JSON.stringify(nextSession));
         setStep("organization");
@@ -111,9 +107,10 @@ export default function Onboarding() {
       if (availableOrganizations.length > 1) {
         setSelectedOrganizationId(availableOrganizations[0].id);
         setStep("organization-select");
-      } else if (availableOrganizations[0]) {
-        setOrganization(availableOrganizations[0]);
-        window.localStorage.setItem("youb-organization", JSON.stringify(availableOrganizations[0]));
+      } else if (resolveOrganizationSelection(availableOrganizations)) {
+        const selectedOrganization = resolveOrganizationSelection(availableOrganizations)!;
+        setOrganization(selectedOrganization);
+        window.localStorage.setItem("youb-organization", JSON.stringify(selectedOrganization));
         window.location.href = appPath("/commercial");
       } else {
         setStep("organization");
@@ -127,7 +124,7 @@ export default function Onboarding() {
 
   function handleOrganizationSelect(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const selected = organizations.find((item) => item.id === selectedOrganizationId);
+    const selected = resolveOrganizationSelection(organizations, selectedOrganizationId);
     if (!selected) return;
     setOrganization(selected);
     window.localStorage.setItem("youb-organization", JSON.stringify(selected));

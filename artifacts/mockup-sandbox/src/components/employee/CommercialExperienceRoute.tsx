@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { getEmployeeExperienceContext, restoreSession, type EmployeeExperienceContext, type SupabaseSession } from "../../lib/supabase";
+import { commercialExperienceForRole, getEmployeeExperienceContext, restoreSession, type EmployeeExperienceContext, type SupabaseSession } from "../../lib/supabase";
 import Dashboard from "../mockups/Dashboard";
 import EmployeeExperienceRoute from "./EmployeeExperienceRoute";
 import ExecutiveHomeRoute from "./ExecutiveHomeRoute";
@@ -14,7 +14,8 @@ export default function CommercialExperienceRoute() {
   if (loading) return <Message title="Preparando sua experiência" detail="Estamos reunindo a jornada correspondente ao seu papel." />;
   if (error) return <Message title="Experiência indisponível" detail={error} />;
   if (!session || !context) return <Message title="Acesse sua conta" detail="Entre na youB para abrir a Commercial V1." action={<a className="mt-5 inline-flex rounded-full bg-[var(--youb-navy)] px-4 py-2 text-sm font-bold text-white" href={appPath("/preview/Onboarding")}>Abrir acesso</a>} />;
-  if (context.membership.role === "diretoria") return <ExecutiveHomeRoute />;
-  if (context.membership.role === "colaborador") return <EmployeeExperienceRoute />;
+  const experience = commercialExperienceForRole(context.membership.role);
+  if (experience === "executive") return <ExecutiveHomeRoute />;
+  if (experience === "employee") return <EmployeeExperienceRoute />;
   return <Dashboard session={session} organization={context.organization} onLogout={() => { window.localStorage.removeItem("youb-session"); window.localStorage.removeItem("youb-organization"); window.location.href = appPath("/preview/Onboarding"); }} />;
 }
