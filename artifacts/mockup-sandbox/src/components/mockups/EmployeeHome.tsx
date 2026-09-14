@@ -4,7 +4,7 @@ import BeeShell, { type BeeContext } from "./BeeShell";
 
 export type EmployeeHomeContext = { displayName: string; organizationName: string; beeContext: BeeContext; data?: EmployeeHomeData };
 type Card = { label: string; detail: string; icon: typeof Target };
-function cardsFrom(data?: EmployeeHomeData): Card[] {
+export function cardsFrom(data?: EmployeeHomeData): Card[] {
   const pendingActions = data?.actions.filter((action) => action.status !== "completed" && action.status !== "cancelled").length ?? 0;
   const pdis = data?.pdis.filter((pdi) => pdi.status !== "cancelled").length ?? 0;
   const assessments = data?.assessments.length ?? 0;
