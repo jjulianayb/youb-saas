@@ -4,15 +4,19 @@ import type { FormEvent } from "react";
 import {
   createOrganization,
   getMyOrganization,
+  getMyOrganizations,
   isSupabaseConfigured,
+  restoreSession,
   signIn,
   signUp,
   type SupabaseSession,
 } from "../../lib/supabase";
+import { appPath } from "../../lib/app-paths";
+import type { OrganizationSummary } from "../../lib/supabase";
 import Dashboard from "./Dashboard";
 
 type Mode = "login" | "signup";
-type Step = "access" | "organization" | "done";
+type Step = "access" | "organization" | "organization-select" | "done";
 
 const inputClassName =
   "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
@@ -36,37 +40,35 @@ export default function Onboarding() {
   const [password, setPassword] = useState("");
   const [organizationName, setOrganizationName] = useState("");
   const [session, setSession] = useState<SupabaseSession | null>(null);
-  const [organization, setOrganization] = useState<{ id: string; name: string; slug: string } | null>(null);
+  const [organization, setOrganization] = useState<OrganizationSummary | null>(null);
+  const [organizations, setOrganizations] = useState<OrganizationSummary[]>([]);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const savedSession = window.localStorage.getItem("youb-session");
-    if (!savedSession) return;
-
     let cancelled = false;
     void (async () => {
-      try {
-        const restoredSession = JSON.parse(savedSession) as SupabaseSession;
-        setSession(restoredSession);
-        const savedOrganization = window.localStorage.getItem("youb-organization");
-        const existingOrganization = savedOrganization
-          ? (JSON.parse(savedOrganization) as { id: string; name: string; slug: string })
-          : await getMyOrganization(restoredSession);
-        if (cancelled || !existingOrganization) return;
-        setOrganization(existingOrganization);
-        window.localStorage.setItem("youb-organization", JSON.stringify(existingOrganization));
-        setStep("done");
-      } catch {
-        window.localStorage.removeItem("youb-session");
-        window.localStorage.removeItem("youb-organization");
+      const restoredSession = await restoreSession();
+      if (cancelled || !restoredSession) return;
+      setSession(restoredSession);
+      const availableOrganizations = await getMyOrganizations(restoredSession);
+      if (cancelled) return;
+      setOrganizations(availableOrganizations);
+      if (availableOrganizations.length > 1) {
+        setSelectedOrganizationId(availableOrganizations[0].id);
+        setStep("organization-select");
+        return;
       }
+      const savedOrganization = window.localStorage.getItem("youb-organization");
+      const existingOrganization = availableOrganizations[0] ?? (savedOrganization ? JSON.parse(savedOrganization) as OrganizationSummary : await getMyOrganization(restoredSession));
+      if (cancelled || !existingOrganization) return;
+      setOrganization(existingOrganization);
+      window.localStorage.setItem("youb-organization", JSON.stringify(existingOrganization));
+      window.location.href = appPath("/commercial");
     })();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   function resetFeedback() {
@@ -88,9 +90,11 @@ export default function Onboarding() {
           setPassword("");
           return;
         }
-        const nextSession = {
+        const nextSession: SupabaseSession = {
           access_token: response.access_token,
           refresh_token: response.refresh_token,
+          expires_at: undefined,
+          token_type: "bearer",
           user: response.user,
         };
         setSession(nextSession);
@@ -102,11 +106,15 @@ export default function Onboarding() {
       const authenticatedSession = await signIn(email.trim(), password);
       setSession(authenticatedSession);
       window.localStorage.setItem("youb-session", JSON.stringify(authenticatedSession));
-      const existingOrganization = await getMyOrganization(authenticatedSession);
-      if (existingOrganization) {
-        setOrganization(existingOrganization);
-        window.localStorage.setItem("youb-organization", JSON.stringify(existingOrganization));
-        setStep("done");
+      const availableOrganizations = await getMyOrganizations(authenticatedSession);
+      setOrganizations(availableOrganizations);
+      if (availableOrganizations.length > 1) {
+        setSelectedOrganizationId(availableOrganizations[0].id);
+        setStep("organization-select");
+      } else if (availableOrganizations[0]) {
+        setOrganization(availableOrganizations[0]);
+        window.localStorage.setItem("youb-organization", JSON.stringify(availableOrganizations[0]));
+        window.location.href = appPath("/commercial");
       } else {
         setStep("organization");
       }
@@ -115,6 +123,15 @@ export default function Onboarding() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleOrganizationSelect(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const selected = organizations.find((item) => item.id === selectedOrganizationId);
+    if (!selected) return;
+    setOrganization(selected);
+    window.localStorage.setItem("youb-organization", JSON.stringify(selected));
+    window.location.href = appPath("/commercial");
   }
 
   async function handleOrganizationSubmit(event: FormEvent<HTMLFormElement>) {
@@ -127,7 +144,7 @@ export default function Onboarding() {
       const createdOrganization = await createOrganization(session, organizationName.trim());
       setOrganization(createdOrganization);
       window.localStorage.setItem("youb-organization", JSON.stringify(createdOrganization));
-      setStep("done");
+      window.location.href = appPath("/commercial");
     } catch (organizationError) {
       setError(friendlyError(organizationError));
     } finally {
@@ -185,11 +202,12 @@ export default function Onboarding() {
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">
                   {step === "access" && (mode === "login" ? "Entre na sua conta" : "Crie sua conta")}
                   {step === "organization" && "Configure sua empresa"}
+                  {step === "organization-select" && "Escolha sua empresa"}
                   {step === "done" && "Tudo pronto"}
                 </h2>
               </div>
               <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                {step === "access" ? "1 de 2" : step === "organization" ? "2 de 2" : "Concluído"}
+                {step === "access" ? "1 de 2" : step === "organization-select" ? "Seleção" : step === "organization" ? "2 de 2" : "Concluído"}
               </div>
             </div>
 
@@ -227,6 +245,14 @@ export default function Onboarding() {
                     {mode === "login" ? "Criar agora" : "Entrar"}
                   </button>
                 </p>
+              </form>
+            )}
+
+            {step === "organization-select" && (
+              <form className="space-y-5" onSubmit={handleOrganizationSelect}>
+                <p className="text-sm leading-7 text-slate-500">Seu acesso pertence a mais de uma empresa. Escolha qual espaço deseja abrir agora.</p>
+                <label className="block text-sm font-semibold text-slate-700">Empresa<select className={inputClassName} value={selectedOrganizationId} onChange={(event) => setSelectedOrganizationId(event.target.value)} required><option value="">Selecione</option>{organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+                <button className="w-full rounded-xl bg-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#152c57]" type="submit">Abrir empresa</button>
               </form>
             )}
 
