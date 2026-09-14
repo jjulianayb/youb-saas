@@ -5,7 +5,7 @@ export function routeAmbientIntent(input: string): AmbientIntent | null {
   const normalized = input.trim().toLowerCase().replace(/[?!.]/g, "").replace(/\s+/g, "_");
   const aliases: Record<string, AmbientIntent> = {
     attention: "attention_brief", attention_brief: "attention_brief", pending_confirmations: "pending_confirmations",
-    confirmations: "pending_confirmations", leader_today: "leader_today", today: "leader_today", leader_week: "leader_week",
+    confirmations: "pending_confirmations", what_needs_confirmation: "pending_confirmations", leader_today: "leader_today", today: "leader_today", leader_week: "leader_week",
     week: "leader_week", leader_evolution: "leader_evolution", evolution: "leader_evolution",
   };
   return aliases[normalized] ?? null;
