@@ -164,6 +164,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
       const user = encodeURIComponent(session.user.id);
       const membershipRows = await apiRequest<{ role: UserRole }[]>(session, `memberships?select=role&organization_id=eq.${org}&user_id=eq.${user}&limit=1`);
       const role = membershipRows[0]?.role ?? null;
+      if (!role) throw new Error("Não foi possível identificar o papel autorizado para esta organização.");
       setUserRole(role);
       const ownEmployeeRows = await apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id,seniority,manager_employee_id&organization_id=eq.${org}&auth_user_id=eq.${user}&limit=2`);
       const ownEmployeeId = ownEmployeeRows.length === 1 ? ownEmployeeRows[0].id : null;
@@ -392,7 +393,8 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     { id: "pdis", label: userRole === "gestor" ? "Desenvolvimento do time" : "PDIs", icon: "◎" },
   ];
   const visibleNavItems = navItems.filter((item) => {
-    if (!userRole || userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh") return true;
+    if (!userRole) return false;
+    if (userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh") return true;
     if (userRole === "gestor") return ["overview", "employee-history", "checkins", "competency-journey", "feedback-360", "feedbacks", "pdis"].includes(item.id);
     return ["overview", "feedback-360"].includes(item.id);
   });
