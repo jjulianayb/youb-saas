@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appPath } from "../../artifacts/mockup-sandbox/src/lib/app-paths";
-import { commercialExperienceForRole, resolveOrganizationSelection, restoreSession, sessionFromAuth, sessionNeedsRefresh, type OrganizationSummary } from "../../artifacts/mockup-sandbox/src/lib/supabase";
+import { appPath } from "./app-paths";
+import { commercialExperienceForRole, resolveOrganizationSelection, restoreSession, sessionFromAuth, sessionNeedsRefresh, type OrganizationSummary } from "./supabase";
 
 const organization = (id: string): OrganizationSummary => ({ id, name: `Empresa ${id}`, slug: `empresa-${id}` });
 const user = { id: "10000000-0000-0000-0000-000000000001", email: "test@example.invalid" };
