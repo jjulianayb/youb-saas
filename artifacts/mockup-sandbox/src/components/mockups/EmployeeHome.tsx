@@ -10,11 +10,10 @@ function cardsFrom(data?: EmployeeHomeData): Card[] {
   const assessments = data?.assessments.length ?? 0;
   const latestCheckin = data?.checkins[0]?.checkin_date;
   return [
-    { label: "Tarefas de hoje", detail: data ? pendingActions ? `${pendingActions} ação(ões) pendente(s) vinculada(s) ao seu perfil.` : "Nenhuma ação pendente vinculada ao seu perfil." : "Nenhuma fonte de tarefas está conectada.", icon: CheckCircle2 },
+    { label: "Hoje", detail: data ? pendingActions ? `${pendingActions} ação(ões) pendente(s) vinculada(s) ao seu perfil.` : "Nenhuma ação exige sua atenção agora." : "Nenhuma fonte de tarefas está conectada.", icon: CheckCircle2 },
     { label: "Meu PDI", detail: data ? pdis ? `${pdis} objetivo(s) de PDI encontrado(s).` : "Nenhum objetivo de PDI encontrado." : "Nenhum objetivo disponível neste momento.", icon: Target },
-    { label: "Minhas avaliações", detail: data ? assessments ? `${assessments} avaliação(ões) concluída(s) disponível(is).` : "Nenhuma avaliação concluída disponível." : "Nenhuma avaliação disponível neste momento.", icon: ClipboardList },
-    { label: "Próximos compromissos", detail: "Nenhuma fonte de compromissos está conectada.", icon: CalendarDays },
-    { label: "Meu desenvolvimento", detail: latestCheckin ? `Último check-in registrado em ${latestCheckin}.` : "Nenhum check-in registrado.", icon: TrendingUp },
+    { label: "Minha evolução", detail: data ? assessments ? `${assessments} avaliação(ões) concluída(s) disponível(is).` : "Nenhuma avaliação concluída disponível." : "Nenhuma avaliação disponível neste momento.", icon: TrendingUp },
+    { label: "Próximo passo", detail: latestCheckin ? `Último check-in registrado em ${latestCheckin}.` : "Registre um check-in quando esta fonte estiver conectada.", icon: CalendarDays },
   ];
 }
 function HomeCard({ card }: { card: Card }) { const Icon = card.icon; return <article className="rounded-3xl border border-border bg-card p-5 text-card-foreground shadow-sm"><div className="flex items-start justify-between"><p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">{card.label}</p><div className="rounded-2xl bg-muted p-2.5 text-muted-foreground"><Icon size={19} /></div></div><p className="mt-5 text-sm leading-6 text-muted-foreground">{card.detail}</p></article>; }

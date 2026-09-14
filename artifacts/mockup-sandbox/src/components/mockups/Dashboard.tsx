@@ -6,6 +6,7 @@ import { EMPTY_UUID, employeeQueryFilters, feedbackRelationFilter, relatedQueryF
 import CompetencyCycleAssessment from "./CompetencyCycleAssessment";
 import Feedback360Evolution from "./Feedback360Evolution";
 import PdiDevelopment from "./PdiDevelopment";
+import BeeShell from "./BeeShell";
 import { pdiRpc } from "../../features/pdi-development/service";
 
 type Organization = { id: string; name: string; slug: string };
@@ -366,11 +367,11 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   }
 
   const navItems: Array<{ id: View; label: string; icon: string }> = [
-    { id: "overview", label: "Visão geral", icon: "⌂" },
+    { id: "overview", label: "Hoje", icon: "⌂" },
     { id: "team", label: "Equipe", icon: "♙" },
     { id: "employee-history", label: "Histórico individual", icon: "▤" },
     { id: "checkins", label: "Clima & check-ins", icon: "♥" },
-    { id: "competency-journey", label: "Jornada V1", icon: "◆" },
+    { id: "competency-journey", label: "Desenvolvimento", icon: "◆" },
     { id: "feedback-360", label: "Feedback 360", icon: "◈" },
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
     { id: "pdis", label: "PDIs", icon: "◎" },
@@ -397,7 +398,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
         </aside>
 
         <section className="flex-1 p-5 sm:p-8 lg:p-10">
-          <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel de pessoas</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 text-sm text-slate-500">Acompanhe o desenvolvimento da sua equipe em um só lugar.</p></div><div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><span className="text-slate-400">Perfil </span><strong className="text-[#1e3a6e]">{roleLabel(userRole)}</strong><span className="mx-2 text-slate-300">·</span><span className="text-slate-400">Plano </span><strong className="text-[#1e3a6e]">Essencial</strong></div></header>
+          <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-600">Intelligence Workspace · {organization.name}</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">O que merece sua atenção agora — com pessoas, desenvolvimento e contexto no mesmo lugar.</p></div><div className="flex items-center gap-3"><BeeShell surface="light" context={{ userName: firstName, organizationName: organization.name, role: userRole ?? "authenticated", capabilities: ["read:authorized-context", "recommend:review-only"], employeeLinked: Boolean(authenticatedEmployeeId), screen: "intelligence-workspace" }} /><div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><span className="text-slate-400">Perfil </span><strong className="text-[#30367a]">{roleLabel(userRole)}</strong><span className="mx-2 text-slate-300">·</span><span className="text-slate-400">Plano </span><strong className="text-[#30367a]">Essencial</strong></div></div></header>
           <div className="mx-auto mt-8 max-w-6xl">{notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}{error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
             {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Carregando os dados da empresa...</div> : <>
               {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
