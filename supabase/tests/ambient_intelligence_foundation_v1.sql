@@ -11,6 +11,7 @@ insert into ctx values
 insert into public.organizations(id,name,slug,plan,status) values
  ((select value from ctx where key='org_a'),'Ambient Foundation A','ambient-foundation-a','essencial','active'),
  ((select value from ctx where key='org_b'),'Ambient Foundation B','ambient-foundation-b','essencial','active');
+grant select on ctx to authenticated;
 insert into public.memberships(organization_id,user_id,role) values
  ((select value from ctx where key='org_a'),'10000000-0000-0000-0000-000000000001','admin_youb'),
  ((select value from ctx where key='org_a'),'10000000-0000-0000-0000-000000000002','rh'),
