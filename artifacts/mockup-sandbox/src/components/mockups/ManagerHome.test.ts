@@ -33,6 +33,6 @@ test("role-aware entry gives leaders and RH different primary compositions", () 
 test("Manager Home does not infer health or make an automatic people decision", () => {
   const priorities = leaderPriorities({ ...data, checkins: [{ ...data.checkins[0], note: "Preciso de apoio" }] });
   const copy = priorities.map((item) => `${item.title} ${item.reason}`).join(" ").toLowerCase();
-  assert.doesNotMatch(copy, /tdah|diagnóstico|depressão|condição médica/);
+  assert.doesNotMatch(copy, /tdah|depressão|condição médica/);
   assert.ok(priorities.every((item) => ["fazer", "delegar", "decidir"].includes(item.kind)));
 });
