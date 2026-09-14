@@ -6,7 +6,7 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:bee-runtime": "VITE_SUPABASE_URL=https://test.invalid VITE_SUPABASE_ANON_KEY=test tsx --test ../artifacts/mockup-sandbox/src/features/intelligence-core/bee-runtime.test.ts ../artifacts/mockup-sandbox/src/features/dho-intelligence/service.test.ts ../artifacts/mockup-sandbox/src/components/mockups/ExecutiveHome.test.ts ../artifacts/mockup-sandbox/src/components/commercial/CommercialV1Demo.test.ts ../artifacts/mockup-sandbox/src/lib/application-entry.test.ts",
+    "test:bee-runtime": "VITE_SUPABASE_URL=https://test.invalid VITE_SUPABASE_ANON_KEY=test tsx --test ../artifacts/mockup-sandbox/src/features/intelligence-core/bee-runtime.test.ts ../artifacts/mockup-sandbox/src/features/dho-intelligence/service.test.ts ../artifacts/mockup-sandbox/src/components/mockups/ExecutiveHome.test.ts ../artifacts/mockup-sandbox/src/components/commercial/CommercialV1Demo.test.ts ../artifacts/mockup-sandbox/src/lib/application-entry.test.ts ../artifacts/mockup-sandbox/src/components/mockups/EmployeeHome.test.ts ../artifacts/mockup-sandbox/src/features/ambient-intelligence/foundation.test.ts ../artifacts/mockup-sandbox/src/components/mockups/ManagerHome.test.ts",
     "test:classic-dho-access": "tsx --test ../artifacts/mockup-sandbox/src/features/classic-dho-access.test.ts"
   },
   "devDependencies": {
