@@ -1,0 +1,68 @@
+/* youB Commercial V1 visual language: calm density, contextual hierarchy, and mobile-first focus. */
+.youb-eyebrow {
+  color: var(--youb-violet);
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.youb-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--youb-line);
+  border-radius: 999px;
+  background: rgba(255,255,255,.8);
+  color: var(--youb-violet-deep);
+  font-size: .62rem;
+  font-weight: 750;
+  letter-spacing: .08em;
+  padding: .45rem .7rem;
+  text-transform: uppercase;
+}
+.youb-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--youb-line);
+  border-radius: 2rem;
+  background: linear-gradient(135deg, #fff 0%, #faf9ff 56%, #f0edff 100%);
+  padding: 1.6rem;
+}
+.youb-hero::after {
+  position: absolute;
+  right: -7rem;
+  top: -9rem;
+  width: 22rem;
+  height: 22rem;
+  border: 1px solid rgba(112,87,217,.12);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+.youb-panel {
+  border: 1px solid var(--youb-line);
+  border-radius: 1.5rem;
+  background: rgba(255,255,255,.92);
+  padding: 1.25rem;
+  box-shadow: 0 12px 34px rgba(27,25,72,.045);
+}
+.youb-callout {
+  border: 1px solid #ddd6fe;
+  border-radius: 1rem;
+  background: var(--youb-lilac);
+  padding: 1rem;
+}
+.youb-panel .youb-eyebrow { color: var(--youb-ink-muted); }
+.youb-panel.bg-\[var\(--youb-navy\)\] .youb-eyebrow { color: #c8c1ff; }
+.youb-panel.bg-\[var\(--youb-navy\)\] .youb-eyebrow + h2 { color: #fff; }
+.youb-panel.bg-\[var\(--youb-navy\)\] .youb-eyebrow ~ div p { color: rgba(255,255,255,.7); }
+@media (min-width: 640px) {
+  .youb-hero { padding: 2.25rem; }
+  .youb-panel { padding: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+@media (max-width: 767px) {
+  .youb-panel { border-radius: 1.25rem; }
+}

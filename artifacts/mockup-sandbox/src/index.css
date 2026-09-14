@@ -51,6 +51,13 @@
   --youb-violet: #8b5cf6;
   --youb-surface: #f8f8fc;
   --youb-focus: #7c5ce0;
+  --youb-teal: #7057d9;
+  --youb-violet-deep: #4b3c9a;
+  --youb-lilac: #f2efff;
+  --youb-line: #e7e4f2;
+  --youb-line-strong: #c9c2e3;
+  --youb-ink-soft: #62617d;
+  --youb-ink-muted: #9896ae;
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
