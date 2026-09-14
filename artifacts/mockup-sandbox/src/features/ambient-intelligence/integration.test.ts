@@ -68,7 +68,7 @@ test("inferred and human-declared content are not rewritten as facts", () => {
   const priority = ambientBriefPriorities(model.brief)[0];
   assert.equal(priority.epistemic, "contexto autorizado");
   assert.match(manager(), /Proveniência/);
-  assert.doesNotMatch(manager(), /inferir condição de saúde/);
+  assert.doesNotMatch(ambientBeeResponse(model, "today"), /inferir condição de saúde|tdah|diagnóstico/i);
 });
 
 // K/L. Bee can prepare/explain, but not execute or diagnose.
