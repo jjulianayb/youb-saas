@@ -24,9 +24,14 @@ The existing organizational event catalog is extended with ambient source, obser
 
 ## Safety contract
 
+- Observation visibility is explicit through subject type/reference, visibility scope, authorized roles and authorized users; roles never grant blanket access to personal or subject observations.
+- Manager, diretoria and collaborator visibility is least-privilege and tenant-safe; RH/admin access still requires the declared audience contract.
 - No raw transcript, full message/email body, prompt, chain-of-thought, credential or provider token is stored.
 - No source/actor spoofing: writes require the authenticated actor and tenant-safe composite links.
 - `scope_ref` is descriptive and never replaces RLS.
+- Human actors must equal the authenticated user; machine/system observations cannot carry an arbitrary human actor.
+- Active observations require a same-tenant `available` source registry entry.
+- Confirmation and correction require visibility authorization for the observation.
 - Bee does not expand permissions.
 - No health or mental-health diagnosis inference.
 - No autonomous firing, promotion, discipline or remuneration decision.

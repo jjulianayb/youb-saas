@@ -6,7 +6,7 @@ import { containsForbiddenAmbientContent, containsHealthDiagnosis, isHighStakesA
 
 const context = { organizationId: "org-a", userId: "user-a", role: "gestor" as const, employeeId: "employee-a" };
 const base: AmbientFoundationRead = { sources: [], observations: [], reviews: [], preferences: [], attention: [], commitments: [], briefs: [] };
-const attention = (overrides: Record<string, unknown> = {}) => ({ id: "attention-a", organization_id: "org-a", owner_user_id: "user-a", horizon: "today" as const, attention_type: "review" as const, title: "Revisar feedback", rationale: "Há fonte autorizada", status: "open" as const, priority: 1 as const, due_at: null, source_observation_id: "obs-a", source_recommendation_id: null, context: {}, human_required: true as const, created_by_user_id: "user-a", created_at: "2026-09-01", updated_at: "2026-09-01", ...overrides });
+const attention = (overrides: Record<string, unknown> = {}) => ({ id: "attention-a", organization_id: "org-a", owner_user_id: "user-a", horizon: "today" as const, attention_type: "review" as const, title: "Revisar feedback", rationale: "Há fonte autorizada", status: "open" as const, priority: 1 as const, due_at: null, source_observation_id: "obs-a", source_recommendation_id: null, context: {}, human_required: true as const, visibility_scope: "personal" as const, authorized_roles: [], authorized_user_ids: ["user-a"], created_by_user_id: "user-a", created_at: "2026-09-01", updated_at: "2026-09-01", ...overrides });
 
 test("Ambient intents route to attention_brief, confirmations and three leader horizons", () => {
   assert.deepEqual(AMBIENT_BEE_INTENTS, ["attention_brief", "pending_confirmations", "leader_today", "leader_week", "leader_evolution"]);
@@ -44,7 +44,7 @@ test("value-before-input suppresses a question when a system record already exis
 });
 
 test("inference is not a fact and rejected inference cannot become confirmation implicitly", () => {
-  const foundation: AmbientFoundationRead = { ...base, observations: [{ id: "obs", organization_id: "org-a", source_registry_id: null, observation_type: "pattern", epistemic_kind: "machine_inferred", summary: "Possível padrão", observed_at: "", recorded_at: "", valid_from: null, valid_until: null, sensitivity: "standard", confidence: 0.4, scope_type: "team", scope_ref: "team-a", provenance: { basis: ["record"] }, structured_value: {}, correlation_id: null, actor_user_id: null, created_by_user_id: "user-a", supersedes_observation_id: null }], reviews: [] };
+  const foundation: AmbientFoundationRead = { ...base, observations: [{ id: "obs", organization_id: "org-a", source_registry_id: null, observation_type: "pattern", epistemic_kind: "machine_inferred", summary: "Possível padrão", observed_at: "", recorded_at: "", valid_from: null, valid_until: null, sensitivity: "standard", confidence: 0.4, scope_type: "team", scope_ref: "team-a", subject_type: "team", subject_ref: "team-a", subject_owner_user_id: null, visibility_scope: "organizational", authorized_roles: ["rh"], authorized_user_ids: [], provenance: { basis: ["record"] }, structured_value: {}, correlation_id: null, actor_user_id: null, created_by_user_id: "user-a", supersedes_observation_id: null }], reviews: [] };
   const model = prepareAmbientBeeReadModel(context, foundation);
   assert.equal(model.brief.context_status, "insufficient");
   assert.equal(foundation.observations[0].epistemic_kind, "machine_inferred");
