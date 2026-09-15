@@ -261,7 +261,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   }
 
   function startEditEmployee(employee: Employee) {
-    setEditingEmployee(employee.id); setEmployeeName(employee.full_name); setEmployeeEmail(employee.email ?? ""); setEmployeeArea(employee.area_id ?? ""); setEmployeePosition(employee.position_id ?? ""); setEmployeeSeniority(employee.seniority ?? ""); setEmployeeManager(employee.manager_employee_id ?? ""); setEmployeeRole(employee.auth_user_id ? (membershipRoles[employee.auth_user_id] === "admin_youb" ? "" : membershipRoles[employee.auth_user_id] ?? "") : ""); resetMessages();
+    setEditingEmployee(employee.id); setEmployeeName(employee.full_name); setEmployeeEmail(employee.email ?? ""); setEmployeeArea(employee.area_id ?? ""); setEmployeePosition(employee.position_id ?? ""); setEmployeeSeniority(employee.seniority ?? ""); setEmployeeManager(employee.manager_employee_id ?? ""); setEmployeeRole(employee.auth_user_id ? (membershipRoles[employee.auth_user_id] === "admin_youb" ? "" : (membershipRoles[employee.auth_user_id] as ManagedRole | undefined) ?? "") : ""); resetMessages();
   }
 
   function cancelEditEmployee() {
