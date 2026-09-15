@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { ExecutiveHomeProps } from "../mockups/ExecutiveHome";
 import { buildExecutiveSnapshot, listDueActionsForHome, listOpenReadingsForHome } from "../mockups/ExecutiveHome";
 import type { BeeAttentionItem, BeeIntent, BeeRuntimeFinding } from "../../features/intelligence-core/bee-runtime";
-import "../executive-desktop.css";
+import "../../executive-desktop.css";
 
 const ruleLabel: Record<BeeAttentionItem["rule"], string> = {
   open_risk_reading: "Risco e retenção",
