@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { COMMERCIAL_DEMO_ROLES, demoNavigationForRole, demoRoleLabel, mobileNavigationState } from "./CommercialV1Demo";
+import { COMMERCIAL_DEMO_ROLES, demoExperienceContentForRole, demoNavigationForRole, demoRoleLabel, mobileNavigationState } from "./CommercialV1Demo";
 import { appPath, localAppPath } from "../../lib/app-paths";
 import { readFileSync } from "node:fs";
 
@@ -42,8 +42,15 @@ test("approved Commercial V1 keeps the horizontal shell and Organização Viva",
 });
 
 test("collaborator journey remains personal instead of executive", () => {
+  const collaboratorContent = demoExperienceContentForRole("Colaborador");
   assert.match(source, /role === "Colaborador"/);
   assert.match(source, /MINHA EVOLUÇÃO/);
   assert.equal(demoNavigationForRole("Colaborador").some((item) => item.id === "impact"), false);
   assert.equal(demoNavigationForRole("Colaborador").some((item) => item.id === "decisions"), false);
+  assert.deepEqual(collaboratorContent.nextMoves.map((item) => item.title), [
+    "Registrar avanço no meu objetivo",
+    "Praticar a competência escolhida",
+    "Preparar meu próximo check-in",
+  ]);
+  assert.doesNotMatch(JSON.stringify(collaboratorContent), /evidências|decisão automática/i);
 });
