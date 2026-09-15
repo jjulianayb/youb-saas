@@ -73,14 +73,14 @@ begin
     raise exception 'Este colaborador já está vinculado a outra conta Auth.' using errcode = '23505';
   end if;
 
-  update public.employees
+  update public.employees as e
   set auth_user_id = v_user_id,
-      email = coalesce(nullif(btrim(email), ''), v_email)
-  where organization_id = p_organization_id and id = v_employee_id;
+      email = coalesce(nullif(btrim(e.email), ''), v_email)
+  where e.organization_id = p_organization_id and e.id = v_employee_id;
 
   insert into public.memberships(organization_id, user_id, role)
   values (p_organization_id, v_user_id, p_role)
-  on conflict (organization_id, user_id)
+  on conflict on constraint memberships_organization_id_user_id_key
   do update set role = excluded.role;
 
   return query select v_user_id, p_organization_id, p_role, v_employee_id;
