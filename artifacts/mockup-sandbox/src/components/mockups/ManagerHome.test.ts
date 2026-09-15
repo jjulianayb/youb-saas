@@ -30,6 +30,14 @@ test("role-aware entry gives leaders and RH different primary compositions", () 
   assert.doesNotMatch(dashboard, /userRole === "gestor" \? <Overview/);
 });
 
+test("authenticated experience uses the approved horizontal product shell", () => {
+  const dashboard = readFileSync(new URL("./Dashboard.tsx", import.meta.url), "utf8");
+  assert.match(dashboard, /yb-app-topbar/);
+  assert.match(dashboard, /Navegação principal da youB/);
+  assert.match(dashboard, /yb-app-mobile-nav/);
+  assert.doesNotMatch(dashboard, /<aside className="w-full bg-\[#102654\]/);
+});
+
 test("Manager Home does not infer health or make an automatic people decision", () => {
   const priorities = leaderPriorities({ ...data, checkins: [{ ...data.checkins[0], note: "Preciso de apoio" }] });
   const copy = priorities.map((item) => `${item.title} ${item.reason}`).join(" ").toLowerCase();
