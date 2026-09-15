@@ -85,3 +85,12 @@ test("H/I/J — Commercial V1 maps every supported role to its current journey",
   assert.equal(commercialExperienceForRole("rh"), "dashboard");
   assert.equal(commercialExperienceForRole("gestor"), "dashboard");
 });
+
+test("K — scope-dependent roles require an explicit employee link", async () => {
+  const supabase = await import("./supabase");
+  assert.equal(supabase.requiresEmployeeLink("gestor"), true);
+  assert.equal(supabase.requiresEmployeeLink("colaborador"), true);
+  assert.equal(supabase.requiresEmployeeLink("rh"), false);
+  assert.match(supabase.employeeLinkMessage("ambiguous"), /mais de um colaborador/);
+  assert.match(supabase.employeeLinkMessage("unlinked"), /não está vinculado/);
+});

@@ -1,3 +1,5 @@
+import type { CommercialSourceStatusMap } from "../../lib/data-readiness";
+
 export type AmbientEpistemicKind = "system_record" | "machine_observed" | "human_declared" | "machine_inferred" | "human_confirmed" | "human_corrected";
 export type AmbientHorizon = "now" | "today" | "week" | "later";
 export type AmbientAttentionType = "confirm" | "review" | "decide" | "converse" | "delegate" | "act" | "monitor";
@@ -46,6 +48,7 @@ export type AmbientFoundationRead = {
   sources: readonly AmbientSource[]; observations: readonly AmbientObservation[]; reviews: readonly AmbientObservationReview[];
   preferences: readonly AmbientUserPreference[]; attention: readonly AmbientAttentionItem[];
   commitments: readonly LeadershipCommitment[]; briefs: readonly AmbientAttentionBrief[];
+  sourceStatus?: CommercialSourceStatusMap;
 };
 export type AmbientRuntimeContext = { organizationId: string; userId: string; role: AmbientRole; employeeId: string | null };
 export type AmbientIntent = "attention_brief" | "pending_confirmations" | "leader_today" | "leader_week" | "leader_evolution";

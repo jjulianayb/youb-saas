@@ -19,6 +19,7 @@ export type AmbientBeeReadModel = {
   week: readonly AmbientAttentionItem[];
   evolution: { commitments: readonly LeadershipCommitment[]; preferences: readonly Record<string, unknown>[] };
   limitations: readonly string[];
+  sourceStatus?: AmbientFoundationRead["sourceStatus"];
 };
 
 function emptyBrief(context: AmbientRuntimeContext, horizon: AmbientHorizon, reason: string): AmbientAttentionBrief {
@@ -46,7 +47,7 @@ export function prepareAmbientBeeReadModel(context: AmbientRuntimeContext, found
   const commitments = foundation.commitments.filter((item) => item.organization_id === context.organizationId && item.owner_user_id === context.userId);
   const preferences = foundation.preferences.filter((item) => item.organization_id === context.organizationId && item.user_id === context.userId).map((item) => item.preference_value);
   const limitations = observations.length === 0 && attention.length === 0 && commitments.length === 0 ? ["Ambient context is insufficient; no priorities were fabricated."] : [];
-  return { context, brief: briefFromItems(context, attention, "today"), pendingConfirmations: attention.filter((item) => item.attention_type === "confirm" && item.status === "open"), today: attention.filter((item) => item.horizon === "today"), week: attention.filter((item) => item.horizon === "week"), evolution: { commitments, preferences }, limitations };
+  return { context, brief: briefFromItems(context, attention, "today"), pendingConfirmations: attention.filter((item) => item.attention_type === "confirm" && item.status === "open"), today: attention.filter((item) => item.horizon === "today"), week: attention.filter((item) => item.horizon === "week"), evolution: { commitments, preferences }, limitations, sourceStatus: foundation.sourceStatus };
 }
 export function selectAmbientIntent(model: AmbientBeeReadModel, intent: AmbientIntent): AmbientAttentionBrief | readonly AmbientAttentionItem[] | AmbientBeeReadModel["evolution"] {
   if (intent === "attention_brief" || intent === "leader_today") return model.brief;

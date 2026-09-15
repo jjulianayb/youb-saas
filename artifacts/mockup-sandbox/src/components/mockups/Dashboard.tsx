@@ -91,6 +91,8 @@ function seniorityLabel(seniority?: string | null): string {
 function roleLabel(role?: UserRole | null): string {
   return ({ admin_youb: "Administrador", diretoria: "Diretoria", rh: "RH", gestor: "Gestor", colaborador: "Colaborador" } as Record<string, string>)[role ?? ""] ?? "Acesso não identificado";
 }
+function isUserRole(value: unknown): value is UserRole { return value === "admin_youb" || value === "diretoria" || value === "rh" || value === "gestor" || value === "colaborador"; }
+function requiresDashboardEmployeeLink(role: UserRole): boolean { return role === "gestor" || role === "colaborador"; }
 
 export default function Dashboard({ session, organization, onLogout }: DashboardProps) {
   const [view, setView] = useState<View>("overview");
@@ -162,10 +164,12 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     try {
       const org = encodeURIComponent(organization.id);
       const user = encodeURIComponent(session.user.id);
-      const membershipRows = await apiRequest<{ role: UserRole }[]>(session, `memberships?select=role&organization_id=eq.${org}&user_id=eq.${user}&limit=1`);
-      const role = membershipRows[0]?.role ?? null;
+      const membershipRows = await apiRequest<{ role?: unknown }[]>(session, `memberships?select=role&organization_id=eq.${org}&user_id=eq.${user}&limit=2`);
+      const role = membershipRows.length === 1 && isUserRole(membershipRows[0]?.role) ? membershipRows[0].role : null;
+      if (!role) throw new Error("O papel deste acesso não foi identificado com segurança. A Home foi bloqueada.");
       setUserRole(role);
       const ownEmployeeRows = await apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id,seniority,manager_employee_id&organization_id=eq.${org}&auth_user_id=eq.${user}&limit=2`);
+      if (requiresDashboardEmployeeLink(role) && ownEmployeeRows.length !== 1) throw new Error(ownEmployeeRows.length > 1 ? "Este acesso está vinculado a mais de um colaborador. O vínculo precisa ser corrigido antes de abrir a Home." : "Este acesso ainda não está vinculado a um colaborador autorizado.");
       const ownEmployeeId = ownEmployeeRows.length === 1 ? ownEmployeeRows[0].id : null;
       setAuthenticatedEmployeeId(ownEmployeeId);
       const queryContext = { role, organizationId: organization.id, userId: session.user.id, employeeId: ownEmployeeId };
