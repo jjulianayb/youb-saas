@@ -22,7 +22,7 @@ insert into public.employees(id, organization_id, full_name, email, status) valu
   ('d4000000-0000-0000-0000-000000000011', 'd4000000-0000-0000-0000-000000000001', 'Pessoa B', 'peer-one@example.invalid', 'active');
 
 create or replace function pg_temp.assert_true(label text, actual boolean)
-returns void language plpgsql as $$ begin if not actual then raise exception '%: expected true', label; end $$;
+returns void language plpgsql as $$ begin if not actual then raise exception '%: expected true', label; end if; end $$;
 create or replace function pg_temp.try_cross_org_link()
 returns boolean language plpgsql security invoker as $$
 begin
