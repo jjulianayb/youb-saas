@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import ExecutiveHome from "../mockups/ExecutiveHome";
+import ExecutiveHome from "./ExecutiveDesktopHome";
 import EmployeeExperienceRoute from "./EmployeeExperienceRoute";
 import { getEmployeeExperienceContext, restoreSession, type EmployeeExperienceContext, type SupabaseSession } from "../../lib/supabase";
 import { handleBeeIntent, readBeeRuntime, type BeeIntent, type BeeRuntimeContext, type BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
