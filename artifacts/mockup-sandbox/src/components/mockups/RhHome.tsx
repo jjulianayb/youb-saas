@@ -1,16 +1,175 @@
 import { useState } from "react";
-import { ArrowRight, BookOpen, CheckCircle2, Search, ShieldCheck, Sparkles, Target } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import BeeShell, { type BeeContext } from "./BeeShell";
 
-type RhHomeProps = { displayName: string; organizationName: string; beeContext: BeeContext; counts: { employees: number; feedbacks: number; pdis: number; cycles: number }; onView: (view: "team" | "employee-history" | "checkins" | "pdis" | "feedbacks" | "competency-journey") => void };
+type RhHomeProps = {
+  displayName: string;
+  organizationName: string;
+  beeContext: BeeContext;
+  counts: {
+    employees: number;
+    feedbacks: number;
+    pdis: number;
+    cycles: number;
+  };
+  onView: (
+    view:
+      | "team"
+      | "employee-history"
+      | "checkins"
+      | "pdis"
+      | "feedbacks"
+      | "competency-journey",
+  ) => void;
+};
 const paths = [
-  { title: "Investigar", detail: "Abrir uma leitura e separar observação, evidência e hipótese.", view: "checkins" as const, icon: Search },
-  { title: "Interpretar", detail: "Acompanhar desenvolvimento e contexto sem transformar correlação em causalidade.", view: "employee-history" as const, icon: BookOpen },
-  { title: "Intervir", detail: "Preparar uma ação possível para decisão humana e acompanhamento.", view: "pdis" as const, icon: Target },
-  { title: "Acompanhar", detail: "Revisar ciclos, feedbacks e impacto observado ao longo do tempo.", view: "competency-journey" as const, icon: CheckCircle2 },
+  {
+    title: "Investigar",
+    detail: "Abrir uma leitura e separar observação, evidência e hipótese.",
+    view: "checkins" as const,
+    icon: Search,
+  },
+  {
+    title: "Interpretar",
+    detail:
+      "Acompanhar desenvolvimento e contexto sem transformar correlação em causalidade.",
+    view: "employee-history" as const,
+    icon: BookOpen,
+  },
+  {
+    title: "Intervir",
+    detail: "Preparar uma ação possível para decisão humana e acompanhamento.",
+    view: "pdis" as const,
+    icon: Target,
+  },
+  {
+    title: "Acompanhar",
+    detail: "Revisar ciclos, feedbacks e impacto observado ao longo do tempo.",
+    view: "competency-journey" as const,
+    icon: CheckCircle2,
+  },
 ];
 
-export default function RhHome({ displayName, organizationName, beeContext, counts, onView }: RhHomeProps) {
+export default function RhHome({
+  displayName,
+  organizationName,
+  beeContext,
+  counts,
+  onView,
+}: RhHomeProps) {
   const [selected, setSelected] = useState(0);
-  return <main className="min-h-screen bg-[#f8f8fc] px-4 py-6 text-slate-950 sm:px-8 sm:py-10"><div className="mx-auto max-w-5xl space-y-7"><header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-600">Intelligence Workspace · {organizationName}</p><h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Olá, {displayName.split(" ")[0]}.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Investigue o que merece atenção, interprete com responsabilidade e prepare o próximo movimento humano.</p></div><BeeShell surface="light" context={beeContext} /></header><section className="rounded-[2rem] bg-gradient-to-br from-[#171e48] via-[#2b2b70] to-[#6845a6] p-6 text-white shadow-xl sm:p-8"><div className="flex items-start gap-3"><Sparkles className="mt-0.5 text-violet-200" size={20} /><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-200">O que merece investigação agora</p><h2 className="mt-3 text-2xl font-black">Poucos caminhos. Mais contexto quando você escolher.</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">As fontes permanecem por trás. O workspace entrega uma síntese sem esconder o que ainda é desconhecido.</p></div></div><div className="mt-6 grid gap-2 sm:grid-cols-4">{paths.map((path, index) => <button type="button" key={path.title} onClick={() => setSelected(index)} className={`rounded-2xl p-4 text-left transition ${selected === index ? "bg-white text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}><path.icon size={17} className={selected === index ? "text-violet-600" : "text-violet-200"} /><p className="mt-4 text-sm font-black">{path.title}</p><p className={`mt-1 text-xs leading-5 ${selected === index ? "text-slate-500" : "text-white/60"}`}>{path.detail}</p></button>)}</div></section><section className="grid gap-3 md:grid-cols-2"><article className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Contexto disponível</p><div className="mt-4 grid grid-cols-2 gap-3"><div><p className="text-2xl font-black">{counts.employees}</p><p className="text-xs text-slate-500">pessoas no escopo</p></div><div><p className="text-2xl font-black">{counts.pdis}</p><p className="text-xs text-slate-500">PDIs em acompanhamento</p></div><div><p className="text-2xl font-black">{counts.feedbacks}</p><p className="text-xs text-slate-500">feedbacks registrados</p></div><div><p className="text-2xl font-black">{counts.cycles}</p><p className="text-xs text-slate-500">ciclos disponíveis</p></div></div></article><article className="rounded-2xl border border-violet-100 bg-violet-50/70 p-5"><div className="flex items-center gap-2 text-violet-800"><ShieldCheck size={17} /><p className="text-xs font-black uppercase tracking-[0.14em]">Leitura responsável</p></div><p className="mt-3 text-sm leading-6 text-violet-950">Observação, evidência, desconhecido, hipótese, Bee e decisão humana continuam separados.</p><button type="button" onClick={() => onView(paths[selected].view)} className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#171e48] px-4 py-2.5 text-xs font-bold text-white">Abrir {paths[selected].title.toLowerCase()} <ArrowRight size={14} /></button></article></section></div></main>;
+  return (
+    <main className="yb-rh-home min-h-screen bg-[#f8f8fc] px-4 py-6 text-slate-950 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-5xl space-y-7">
+        <header className="yb-home-intro flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-600">
+              Intelligence Workspace · {organizationName}
+            </p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+              Olá, {displayName.split(" ")[0]}.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              Investigue o que merece atenção, interprete com responsabilidade e
+              prepare o próximo movimento humano.
+            </p>
+          </div>
+          <BeeShell surface="light" context={beeContext} />
+        </header>
+        <section className="rounded-[2rem] bg-gradient-to-br from-[#171e48] via-[#2b2b70] to-[#6845a6] p-6 text-white shadow-xl sm:p-8">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 text-violet-200" size={20} />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-200">
+                O que merece investigação agora
+              </p>
+              <h2 className="mt-3 text-2xl font-black">
+                Poucos caminhos. Mais contexto quando você escolher.
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
+                As fontes permanecem por trás. O workspace entrega uma síntese
+                sem esconder o que ainda é desconhecido.
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-2 sm:grid-cols-4">
+            {paths.map((path, index) => (
+              <button
+                type="button"
+                key={path.title}
+                onClick={() => setSelected(index)}
+                className={`rounded-2xl p-4 text-left transition ${selected === index ? "bg-white text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}
+              >
+                <path.icon
+                  size={17}
+                  className={
+                    selected === index ? "text-violet-600" : "text-violet-200"
+                  }
+                />
+                <p className="mt-4 text-sm font-black">{path.title}</p>
+                <p
+                  className={`mt-1 text-xs leading-5 ${selected === index ? "text-slate-500" : "text-white/60"}`}
+                >
+                  {path.detail}
+                </p>
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="grid gap-3 md:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+              Contexto disponível
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-2xl font-black">{counts.employees}</p>
+                <p className="text-xs text-slate-500">pessoas no escopo</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black">{counts.pdis}</p>
+                <p className="text-xs text-slate-500">PDIs em acompanhamento</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black">{counts.feedbacks}</p>
+                <p className="text-xs text-slate-500">feedbacks registrados</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black">{counts.cycles}</p>
+                <p className="text-xs text-slate-500">ciclos disponíveis</p>
+              </div>
+            </div>
+          </article>
+          <article className="rounded-2xl border border-violet-100 bg-violet-50/70 p-5">
+            <div className="flex items-center gap-2 text-violet-800">
+              <ShieldCheck size={17} />
+              <p className="text-xs font-black uppercase tracking-[0.14em]">
+                Leitura responsável
+              </p>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-violet-950">
+              Observação, evidência, desconhecido, hipótese, Bee e decisão
+              humana continuam separados.
+            </p>
+            <button
+              type="button"
+              onClick={() => onView(paths[selected].view)}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#171e48] px-4 py-2.5 text-xs font-bold text-white"
+            >
+              Abrir {paths[selected].title.toLowerCase()}{" "}
+              <ArrowRight size={14} />
+            </button>
+          </article>
+        </section>
+      </div>
+    </main>
+  );
 }
