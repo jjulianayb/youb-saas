@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { COMMERCIAL_DEMO_ROLES, demoNavigationForRole, demoRoleLabel, mobileNavigationState } from "./CommercialV1Demo";
 import { appPath, localAppPath } from "../../lib/app-paths";
+import { readFileSync } from "node:fs";
+
+const source = readFileSync(new URL("./CommercialV1Demo.tsx", import.meta.url), "utf8");
 
 test("Commercial V1 demo exposes bounded role journeys without cross-role navigation", () => {
   assert.deepEqual(COMMERCIAL_DEMO_ROLES, ["RH", "Gestor", "Colaborador", "Diretoria"]);
@@ -28,4 +31,19 @@ test("Commercial V1 demo is explicitly synthetic", () => {
   assert.match(serialized, /Diretoria/);
   assert.equal(serialized.includes("participant_id"), false);
   assert.equal(serialized.includes("evaluator_employee_id"), false);
+});
+
+test("approved Commercial V1 keeps the horizontal shell and Organização Viva", () => {
+  assert.match(source, /cv-topbar/);
+  assert.match(source, /Navegação principal/);
+  assert.match(source, /ORGANIZAÇÃO VIVA/);
+  assert.match(source, /Observar → Compreender → Simular → Agir/);
+  assert.doesNotMatch(source, /<aside className="w-full bg-\[var\(--youb-navy\)\]/);
+});
+
+test("collaborator journey remains personal instead of executive", () => {
+  assert.match(source, /role === "Colaborador"/);
+  assert.match(source, /MINHA EVOLUÇÃO/);
+  assert.equal(demoNavigationForRole("Colaborador").some((item) => item.id === "impact"), false);
+  assert.equal(demoNavigationForRole("Colaborador").some((item) => item.id === "decisions"), false);
 });
