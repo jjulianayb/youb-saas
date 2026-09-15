@@ -34,6 +34,55 @@ const metrics: Record<CommercialDemoRole, Array<{ label: string; value: string; 
   Diretoria: [{ label: "Leituras", value: "04", detail: "agregadas e abertas", tone: "violet" }, { label: "Decisões", value: "02", detail: "aguardam revisão", tone: "pink" }, { label: "Impacto", value: "+18%", detail: "evolução observada", tone: "amber" }],
 };
 
+type DemoExperienceContent = {
+  nextMoves: Array<{ title: string; detail: string }>;
+  beeTitle: string;
+  beeDetail: string;
+};
+
+const experienceContent: Record<CommercialDemoRole, DemoExperienceContent> = {
+  RH: {
+    nextMoves: [
+      { title: "Revisar a cadência de conversas", detail: "Prioridade demonstrativa" },
+      { title: "Aprofundar evidências antes de agir", detail: "Contexto disponível" },
+      { title: "Acompanhar evolução do ciclo", detail: "Contexto disponível" },
+    ],
+    beeTitle: "Posso organizar as evidências antes da sua decisão.",
+    beeDetail: "Sem inferências ocultas. Sem decisão automática.",
+  },
+  Gestor: {
+    nextMoves: [
+      { title: "Preparar a próxima conversa individual", detail: "Ação de liderança" },
+      { title: "Revisar o avanço dos PDIs da equipe", detail: "Acompanhamento semanal" },
+      { title: "Registrar os combinados da semana", detail: "Próximo passo" },
+    ],
+    beeTitle: "Posso preparar o contexto da sua próxima conversa.",
+    beeDetail: "Você conduz. Eu organizo os pontos relevantes.",
+  },
+  Colaborador: {
+    nextMoves: [
+      { title: "Registrar avanço no meu objetivo", detail: "Meu desenvolvimento" },
+      { title: "Praticar a competência escolhida", detail: "Próximo passo" },
+      { title: "Preparar meu próximo check-in", detail: "Minha jornada" },
+    ],
+    beeTitle: "Posso ajudar você a transformar seu objetivo em próximos passos.",
+    beeDetail: "Seu espaço pessoal de desenvolvimento.",
+  },
+  Diretoria: {
+    nextMoves: [
+      { title: "Revisar a leitura organizacional", detail: "Prioridade demonstrativa" },
+      { title: "Comparar evidências antes de decidir", detail: "Contexto disponível" },
+      { title: "Acompanhar o impacto da decisão", detail: "Evolução observada" },
+    ],
+    beeTitle: "Posso organizar as evidências antes da sua decisão.",
+    beeDetail: "Sem inferências ocultas. Sem decisão automática.",
+  },
+};
+
+export function demoExperienceContentForRole(role: CommercialDemoRole): DemoExperienceContent {
+  return experienceContent[role];
+}
+
 const people = [
   { name: "Mariana", role: "Liderança", x: 15, y: 25, tone: "pink" },
   { name: "Carlos", role: "Gestor", x: 45, y: 10, tone: "violet" },
@@ -51,13 +100,14 @@ function OrganizationLiving({ role }: { role: CommercialDemoRole }) {
   return <section className="cv-living" aria-label="Organização Viva"><header><div><p>ORGANIZAÇÃO VIVA</p><h2>Veja relações, sinais e movimento</h2><span>Observar → Compreender → Simular → Agir</span></div><button type="button">Explorar leitura <ArrowRight /></button></header><div className="cv-living__body"><div className="cv-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M15 25 C28 10 35 12 45 10 M45 10 C56 15 59 24 70 34 M15 25 C12 46 18 63 30 70 M30 70 C43 83 57 85 68 76 M70 34 C77 48 76 64 68 76 M45 10 C44 36 38 54 30 70" /></svg>{people.map((person) => <button key={person.name} type="button" className="cv-node" style={{ left: `${person.x}%`, top: `${person.y}%` }}><DemoAvatar tone={person.tone} /><strong>{person.name}</strong><small>{person.role}</small></button>)}</div><aside className="cv-insight"><div className="cv-insight__label"><Sparkles /> LEITURA EM DESTAQUE</div><h3>O ritmo de acompanhamento não está igual entre as equipes.</h3><p>Há sinais demonstrativos de diferença na cadência de conversas. Isso ainda é uma <strong>hipótese</strong>, não uma conclusão.</p><dl><div><dt>Evidências conectadas</dt><dd>4 fontes</dd></div><div><dt>Confiança atual</dt><dd>Moderada</dd></div></dl><button type="button">Compreender esta leitura <ArrowRight /></button></aside></div></section>;
 }
 
-function BeePanel() { return <aside className="cv-bee"><div className="cv-bee__orb"><BrainCircuit /></div><div><p>BEE · INTELIGÊNCIA CONTEXTUAL</p><h3>Posso organizar as evidências antes da sua decisão.</h3><small>Sem inferências ocultas. Sem decisão automática.</small></div><button type="button">Perguntar à Bee <Sparkles /></button></aside>; }
+function BeePanel({ content }: { content: DemoExperienceContent }) { return <aside className="cv-bee"><div className="cv-bee__orb"><BrainCircuit /></div><div><p>BEE · INTELIGÊNCIA CONTEXTUAL</p><h3>{content.beeTitle}</h3><small>{content.beeDetail}</small></div><button type="button">Perguntar à Bee <Sparkles /></button></aside>; }
 
 export default function CommercialV1Demo() {
   const [role, setRole] = useState<CommercialDemoRole>("RH");
   const [active, setActive] = useState("home");
   const [mobileOpen, setMobileOpen] = useState(false);
   const copy = roleCopy[role];
+  const content = demoExperienceContentForRole(role);
   const navigation = useMemo(() => demoNavigationForRole(role), [role]);
   const mobileState = mobileNavigationState(mobileOpen);
   function selectRole(nextRole: CommercialDemoRole) { setRole(nextRole); setActive("home"); setMobileOpen(false); }
@@ -66,7 +116,7 @@ export default function CommercialV1Demo() {
     <nav className={`cv-mobile-nav ${mobileState.visibility}`} aria-label="Navegação móvel">{navigation.map((item) => <button type="button" key={item.id} className={active === item.id ? "active" : ""} onClick={() => { setActive(item.id); setMobileOpen(false); }}>{item.label}</button>)}</nav>
     <div className="cv-rolebar"><span>EXPERIÊNCIA</span><div>{COMMERCIAL_DEMO_ROLES.map((item) => <button type="button" key={item} aria-pressed={role === item} className={role === item ? "active" : ""} onClick={() => selectRole(item)}>{demoRoleLabel(item)}</button>)}</div><button type="button" className="cv-company">Acme Labs · demonstração <ChevronDown /></button></div>
     <section className="cv-hero"><div className="cv-hero__mist" /><div className="cv-hero__copy"><p>{copy.eyebrow}</p><h1>{copy.hello}</h1><h2>{copy.title}</h2><span>{copy.description}</span></div><blockquote>“{copy.quote}”<i /><small>youB · Inteligência Proprietária de DHO</small></blockquote></section>
-    <div className="cv-canvas"><section className="cv-metrics">{metrics[role].map((item) => <MetricCard key={item.label} item={item} />)}</section><OrganizationLiving role={role} /><section className="cv-bottom"><article><header><div><p>PRÓXIMOS MOVIMENTOS</p><h2>O que merece atenção agora</h2></div><span>3 itens</span></header>{["Revisar a cadência de conversas", "Aprofundar evidências antes de agir", "Acompanhar evolução do ciclo"].map((item, index) => <button type="button" key={item}><b>0{index + 1}</b><span><strong>{item}</strong><small>{index === 0 ? "Prioridade demonstrativa" : "Contexto disponível"}</small></span><ArrowRight /></button>)}</article><BeePanel /></section></div>
+    <div className="cv-canvas"><section className="cv-metrics">{metrics[role].map((item) => <MetricCard key={item.label} item={item} />)}</section><OrganizationLiving role={role} /><section className="cv-bottom"><article><header><div><p>PRÓXIMOS MOVIMENTOS</p><h2>{role === "Colaborador" ? "Meus próximos passos" : "O que merece atenção agora"}</h2></div><span>3 itens</span></header>{content.nextMoves.map((item, index) => <button type="button" key={item.title}><b>0{index + 1}</b><span><strong>{item.title}</strong><small>{item.detail}</small></span><ArrowRight /></button>)}</article><BeePanel content={content} /></section></div>
     <footer className="cv-mobile-bottom">{navigation.slice(0, 5).map((item) => { const Icon = item.icon; return <button type="button" key={item.id} className={active === item.id ? "active" : ""} onClick={() => setActive(item.id)}><Icon /><span>{item.label.split(" ")[0]}</span></button>; })}</footer>
   </main>;
 }
