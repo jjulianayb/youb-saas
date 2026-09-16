@@ -56,3 +56,7 @@ echo "DHO_BEE_SQL_SUITE=PASS"
 echo "DATA_ARCHITECTURE_P0_SQL_SUITE=PASS"
 "${psql_base[@]}" -f "$repo_root/supabase/tests/data_architecture_p0_employee_creation_concurrency.sql" > /dev/null 2>>"$log_file"
 echo "DATA_ARCHITECTURE_P0_CONCURRENCY_SQL_SUITE=PASS"
+
+# This suite controls its own transaction and rolls back synthetic users and tenant data.
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$repo_root/supabase/tests/release_admin_pdi_transactional.sql" > /dev/null 2>>"$log_file"
+echo "RELEASE_ADMIN_PDI_TRANSACTIONAL_SUITE=PASS"
