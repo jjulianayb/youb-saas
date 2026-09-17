@@ -1,0 +1,50 @@
+services:
+  # One-shot dependency install so both app services start with deps already present.
+  setup:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "npm install -g pnpm@9 && pnpm install --no-frozen-lockfile"
+
+  # Frontend — Vite + React dev server on port 3000 (the preview entry point).
+  web:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    environment:
+      - PORT=3000
+      - BASE_PATH=/
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install -g pnpm@9 && pnpm --filter @workspace/mockup-sandbox run dev"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
+  # Backend — Express API server on port 8000.
+  api:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=8000
+      - NODE_ENV=development
+    ports:
+      - "8000:8000"
+    command: sh -c "npm install -g pnpm@9 && pnpm --filter @workspace/api-server run dev"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8000/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
