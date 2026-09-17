@@ -26,7 +26,7 @@ type Props = {
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "");
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const inputClassName = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
-const buttonClassName = "rounded-xl bg-[#1e3a6e] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#152c57] disabled:cursor-not-allowed disabled:opacity-50";
+const buttonClassName = "rounded-xl bg-[#6342e8] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#4f31c9] disabled:cursor-not-allowed disabled:opacity-50";
 const secondaryButtonClassName = "rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50";
 
 async function rest<T>(session: SupabaseSession, path: string): Promise<T> {

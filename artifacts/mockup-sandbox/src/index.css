@@ -42,13 +42,30 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
-/* LIGHT MODE - Default theme with placeholder values */
+/* youB brand identity — remaps Tailwind's blue scale to the brand purple.
+   The app uses blue-* as its accent color across every screen, so overriding
+   the scale rethemes all of them at once. */
+@theme {
+  --color-blue-50: #f4f2fe;
+  --color-blue-100: #e9e5fd;
+  --color-blue-200: #d5ccfb;
+  --color-blue-300: #b7a7f7;
+  --color-blue-400: #9880f1;
+  --color-blue-500: #6342e8;
+  --color-blue-600: #5636d0;
+  --color-blue-700: #4a2cb0;
+  --color-blue-800: #3d258f;
+  --color-blue-900: #331f74;
+  --color-blue-950: #1f1247;
+}
+
+/* LIGHT MODE - youB brand theme */
 :root {
-  --youb-navy: #102654;
-  --youb-ink: #0f1f3d;
-  --youb-teal: #2aa6a0;
-  --youb-surface: #f5f8fc;
-  --youb-focus: #2aa6a0;
+  --youb-navy: #3d258f;
+  --youb-ink: #1a1d23;
+  --youb-teal: #00c48c;
+  --youb-surface: #f5f6fa;
+  --youb-focus: #6342e8;
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
@@ -62,19 +79,19 @@
   --card-foreground: 240 10% 3.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
+  --primary: 252 78% 58%;
+  --primary-foreground: 0 0% 100%;
   --secondary: 240 4.8% 95.9%;
   --secondary-foreground: 240 5.9% 10%;
   --muted: 240 4.8% 95.9%;
   --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
+  --accent: 252 60% 96%;
+  --accent-foreground: 252 78% 32%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
+  --ring: 252 78% 58%;
   --chart-1: 12 76% 61%;
   --chart-2: 173 58% 39%;
   --chart-3: 197 37% 24%;
@@ -92,7 +109,7 @@
   --font-sans: 'Inter', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
-  --radius: .5rem;
+  --radius: .75rem;
   --spacing: 0.25rem;
 }
 

@@ -8,7 +8,7 @@ type Role = "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador";
 type Props = { session: SupabaseSession; organization: { id: string }; role: Role; employeeId: string | null };
 type Tab = "competencies" | "cycles" | "assessments";
 const input = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
-const primary = "rounded-xl bg-[#1e3a6e] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50";
+const primary = "rounded-xl bg-[#6342e8] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50";
 const secondary = "rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 disabled:opacity-50";
 const statusLabels: Record<string, string> = { draft: "Rascunho", active: "Ativo", closed: "Encerrado", in_progress: "Em preenchimento", submitted: "Submetida", completed: "Concluída" };
 

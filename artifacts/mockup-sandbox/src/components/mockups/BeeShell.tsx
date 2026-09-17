@@ -4,7 +4,7 @@ import { Send, ShieldCheck, Sparkles, X } from "lucide-react";
 export type BeeContext = { userName: string; organizationName: string; role: string; capabilities: string[]; employeeLinked: boolean; screen: string };
 type BeeShellProps = { context: BeeContext; avatarUrl?: string | null; avatarLabel?: string; onSubmit?: (message: string) => void };
 
-function BeeAvatar({ avatarUrl, avatarLabel = "Bee" }: { avatarUrl?: string | null; avatarLabel?: string }) { return avatarUrl ? <img src={avatarUrl} alt="Avatar da Bee" className="h-10 w-10 rounded-2xl object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground">{avatarLabel.slice(0, 2).toUpperCase()}</div>; }
+function BeeAvatar({ avatarUrl, avatarLabel = "Bee" }: { avatarUrl?: string | null; avatarLabel?: string }) { return <img src={avatarUrl ?? "/brand/bee.png"} alt={`Avatar da ${avatarLabel}`} className="h-10 w-10 rounded-2xl bg-white object-cover" />; }
 
 export default function BeeShell({ context, avatarUrl, avatarLabel, onSubmit }: BeeShellProps) {
   const [open, setOpen] = useState(false); const [message, setMessage] = useState(""); const [sent, setSent] = useState<string | null>(null);

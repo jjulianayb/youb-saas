@@ -167,10 +167,10 @@ export default function Onboarding() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f8fc] px-5 py-10 text-slate-900 sm:px-8">
+    <main className="min-h-screen bg-[#f5f6fa] px-5 py-10 text-slate-900 sm:px-8">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl items-center justify-center">
         <section className="grid w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_70px_rgba(30,58,110,0.12)] lg:grid-cols-[0.9fr_1.1fr]">
-          <aside className="relative overflow-hidden bg-gradient-to-br from-[#102654] via-[#1e3a6e] to-[#315da0] p-8 text-white sm:p-12">
+          <aside className="relative overflow-hidden bg-gradient-to-br from-[#3d258f] via-[#6342e8] to-[#7c5cf0] p-8 text-white sm:p-12">
             <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
             <div className="relative">
               <div className="mb-16 flex items-baseline gap-1">
@@ -233,7 +233,7 @@ export default function Onboarding() {
                   Senha
                   <input className={inputClassName} type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" required />
                 </label>
-                <button className="w-full rounded-xl bg-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#152c57] disabled:cursor-not-allowed disabled:opacity-50" disabled={!isSupabaseConfigured || submitting} type="submit">
+                <button className="w-full rounded-xl bg-[#6342e8] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#4f31c9] disabled:cursor-not-allowed disabled:opacity-50" disabled={!isSupabaseConfigured || submitting} type="submit">
                   {submitting ? "Aguarde..." : mode === "login" ? "Entrar na youB" : "Criar minha conta"}
                 </button>
                 <p className="text-center text-sm text-slate-500">
@@ -249,7 +249,7 @@ export default function Onboarding() {
               <form className="space-y-5" onSubmit={handleOrganizationSelect}>
                 <p className="text-sm leading-7 text-slate-500">Seu acesso pertence a mais de uma empresa. Escolha qual espaço deseja abrir agora.</p>
                 <label className="block text-sm font-semibold text-slate-700">Empresa<select className={inputClassName} value={selectedOrganizationId} onChange={(event) => setSelectedOrganizationId(event.target.value)} required><option value="">Selecione</option>{organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-                <button className="w-full rounded-xl bg-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#152c57]" type="submit">Abrir empresa</button>
+                <button className="w-full rounded-xl bg-[#6342e8] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#4f31c9]" type="submit">Abrir empresa</button>
               </form>
             )}
 
@@ -260,7 +260,7 @@ export default function Onboarding() {
                   Nome da empresa
                   <input className={inputClassName} value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} placeholder="Ex.: youB Tecnologia" required />
                 </label>
-                <button className="w-full rounded-xl bg-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#152c57] disabled:cursor-not-allowed disabled:opacity-50" disabled={submitting} type="submit">
+                <button className="w-full rounded-xl bg-[#6342e8] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#4f31c9] disabled:cursor-not-allowed disabled:opacity-50" disabled={submitting} type="submit">
                   {submitting ? "Criando espaço..." : "Criar espaço da empresa"}
                 </button>
               </form>
@@ -285,7 +285,7 @@ export default function Onboarding() {
                     ))}
                   </div>
                 </div>
-                <button className="w-full rounded-xl border border-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-[#1e3a6e] transition hover:bg-blue-50" type="button" onClick={() => { window.localStorage.removeItem("youb-session"); window.localStorage.removeItem("youb-organization"); setSession(null); setOrganization(null); setStep("access"); setPassword(""); }}>
+                <button className="w-full rounded-xl border border-[#6342e8] px-5 py-3.5 text-sm font-bold text-[#6342e8] transition hover:bg-blue-50" type="button" onClick={() => { window.localStorage.removeItem("youb-session"); window.localStorage.removeItem("youb-organization"); setSession(null); setOrganization(null); setStep("access"); setPassword(""); }}>
                   Sair da demonstração
                 </button>
               </div>

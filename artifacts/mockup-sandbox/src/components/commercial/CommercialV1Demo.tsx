@@ -23,7 +23,7 @@ const roleCopy: Record<CommercialDemoRole, { eyebrow: string; title: string; des
   Diretoria: { eyebrow: "Executive Home", title: "Decidir com contexto, não com ruído", description: "Indicadores e leituras organizacionais agregadas, sem acesso raw individual indevido.", attention: "1 recomendação aguarda decisão humana", recommendation: "Aprofundar uma leitura organizacional", action: "Ver recomendação" },
 };
 
-function DemoAvatar({ small = false }: { small?: boolean }) { return <div aria-label="Avatar humano da Bee" className={`flex shrink-0 items-center justify-center rounded-2xl bg-[var(--youb-teal)] font-bold text-white ${small ? "h-8 w-8 text-xs" : "h-11 w-11 text-base"}`}>B</div>; }
+function DemoAvatar({ small = false }: { small?: boolean }) { return <img aria-label="Avatar humano da Bee" src="/brand/bee.png" alt="Bee" className={`shrink-0 rounded-2xl bg-white object-cover ${small ? "h-8 w-8" : "h-11 w-11"}`} />; }
 function Metric({ label, value, detail, icon: Icon }: { label: string; value: string; detail: string; icon: typeof Activity }) { return <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,31,61,0.05)]"><div className="flex items-center justify-between"><span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</span><Icon size={17} className="text-[var(--youb-teal)]" /></div><p className="mt-3 text-2xl font-extrabold text-[var(--youb-ink)]">{value}</p><p className="mt-1 text-xs text-slate-500">{detail}</p></article>; }
 
 export default function CommercialV1Demo() {
