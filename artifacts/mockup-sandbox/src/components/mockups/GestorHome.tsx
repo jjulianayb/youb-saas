@@ -41,9 +41,9 @@ function KpiCard({ icon: Icon, label, value, detail }: { icon: typeof Target; la
  * already fetched (Dashboard.tsx's loadData, or readManagerHomeData for the
  * standalone /executive route). No mock data, no fabricated actions.
  */
-export type GestorHomeBodyProps = { data: ManagerHomeData | null; loading: boolean };
+export type GestorHomeBodyProps = { data: ManagerHomeData | null; loading: boolean; onOpenTeam?: () => void };
 
-export function GestorHomeBody({ data, loading }: GestorHomeBodyProps) {
+export function GestorHomeBody({ data, loading, onOpenTeam }: GestorHomeBodyProps) {
   const employeeNames = new Map((data?.team ?? []).map((employee) => [employee.id, employee.full_name]));
   const areaNames = new Map((data?.areas ?? []).map((area) => [area.id, area.name]));
   const positionNames = new Map((data?.positions ?? []).map((position) => [position.id, position.name]));
@@ -84,7 +84,11 @@ export function GestorHomeBody({ data, loading }: GestorHomeBodyProps) {
               <h2 className="mt-1 text-xl font-bold">{teamSize} pessoa{teamSize === 1 ? "" : "s"} no seu time</h2>
             </div>
           </div>
-          <a href={appPath("/commercial")} className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-muted">Abrir equipe completa <ArrowRight size={13} /></a>
+          {onOpenTeam ? (
+            <button type="button" onClick={onOpenTeam} className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-muted">Abrir equipe completa <ArrowRight size={13} /></button>
+          ) : (
+            <a href={appPath("/commercial")} className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-muted">Abrir equipe completa <ArrowRight size={13} /></a>
+          )}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.team.map((employee) => (
