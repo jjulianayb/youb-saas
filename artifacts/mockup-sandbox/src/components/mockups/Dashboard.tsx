@@ -398,7 +398,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const visibleNavItems = navItems.filter((item) => {
     if (!userRole || userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh") return true;
     if (userRole === "gestor") return ["overview", "employee-history", "checkins", "competency-journey", "feedback-360", "feedbacks", "pdis", "calendar"].includes(item.id);
-    return ["overview", "feedback-360", "calendar"].includes(item.id);
+    return ["overview", "employee-history", "checkins", "feedback-360", "feedbacks", "pdis", "calendar"].includes(item.id);
   });
   const canManageStructure = userRole === "admin_youb" || userRole === "rh";
   const canManageAssessments = userRole === "admin_youb" || userRole === "rh" || userRole === "gestor";
