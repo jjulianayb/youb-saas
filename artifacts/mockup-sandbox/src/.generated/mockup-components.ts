@@ -9,5 +9,6 @@ export const modules: ModuleMap = {
   "./components/mockups/Feedback360Evolution.tsx": () => import("../components/mockups/Feedback360Evolution.tsx"),
   "./components/mockups/Onboarding.tsx": () => import("../components/mockups/Onboarding.tsx"),
   "./components/mockups/PdiDevelopment.tsx": () => import("../components/mockups/PdiDevelopment.tsx"),
-  "./components/mockups/RecordDrawer.tsx": () => import("../components/mockups/RecordDrawer.tsx")
+  "./components/mockups/RecordDrawer.tsx": () => import("../components/mockups/RecordDrawer.tsx"),
+  "./components/mockups/ScheduleCalendar.tsx": () => import("../components/mockups/ScheduleCalendar.tsx")
 };
