@@ -7,6 +7,7 @@ import CompetencyCycleAssessment from "./CompetencyCycleAssessment";
 import Feedback360Evolution from "./Feedback360Evolution";
 import PdiDevelopment from "./PdiDevelopment";
 import { pdiRpc } from "../../features/pdi-development/service";
+import { GestorHomeBody } from "./GestorHome";
 
 type Organization = { id: string; name: string; slug: string };
 type UserRole = "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador";
@@ -400,7 +401,9 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
           <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel de pessoas</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 text-sm text-slate-500">Acompanhe o desenvolvimento da sua equipe em um só lugar.</p></div><div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><img src="/brand/avatars/juliana.png" alt="" className="h-9 w-9 rounded-full object-cover" /><span className="text-slate-400">Perfil </span><strong className="text-[#6342e8]">{roleLabel(userRole)}</strong><span className="mx-2 text-slate-300">·</span><span className="text-slate-400">Plano </span><strong className="text-[#6342e8]">Essencial</strong></div></header>
           <div className="mx-auto mt-8 max-w-6xl">{notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}{error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
             {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Carregando os dados da empresa...</div> : <>
-              {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
+              {view === "overview" && (userRole === "gestor"
+                ? <GestorHomeBody data={{ team: employees, areas, positions, checkins, feedbacks, pdis }} loading={false} />
+                : <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />)}
               {view === "competency-journey" && userRole && userRole !== "colaborador" && <CompetencyCycleAssessment session={session} organization={organization} role={userRole} employeeId={authenticatedEmployeeId} />}
               {view === "feedback-360" && userRole && <Feedback360Evolution session={session} organization={organization} role={userRole} employeeId={authenticatedEmployeeId} />}
               {canManageStructure && view === "team" && <ModuleSection title="Equipe" description="Cadastre colaboradores, áreas e cargos para dar contexto aos ciclos e planos.">

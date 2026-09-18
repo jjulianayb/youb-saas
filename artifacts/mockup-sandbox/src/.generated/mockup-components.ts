@@ -7,6 +7,7 @@ export const modules: ModuleMap = {
   "./components/mockups/EmployeeHome.tsx": () => import("../components/mockups/EmployeeHome.tsx"),
   "./components/mockups/ExecutiveHome.tsx": () => import("../components/mockups/ExecutiveHome.tsx"),
   "./components/mockups/Feedback360Evolution.tsx": () => import("../components/mockups/Feedback360Evolution.tsx"),
+  "./components/mockups/GestorHome.tsx": () => import("../components/mockups/GestorHome.tsx"),
   "./components/mockups/Onboarding.tsx": () => import("../components/mockups/Onboarding.tsx"),
   "./components/mockups/PdiDevelopment.tsx": () => import("../components/mockups/PdiDevelopment.tsx")
 };
