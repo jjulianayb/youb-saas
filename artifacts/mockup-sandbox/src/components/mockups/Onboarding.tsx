@@ -59,12 +59,15 @@ export default function Onboarding() {
       if (cancelled) return;
       setOrganizations(availableOrganizations);
       if (availableOrganizations.length > 1) {
-        setSelectedOrganizationId(availableOrganizations[0].id);
+        setSelectedOrganizationId("");
         setStep("organization-select");
         return;
       }
-      const savedOrganization = window.localStorage.getItem("youb-organization");
-      const existingOrganization = resolveOrganizationSelection(availableOrganizations) ?? (savedOrganization ? JSON.parse(savedOrganization) as OrganizationSummary : await getMyOrganization(restoredSession));
+      const savedOrganizationRaw = window.localStorage.getItem("youb-organization");
+      let savedOrganizationCandidate: OrganizationSummary | null = null;
+      try { savedOrganizationCandidate = savedOrganizationRaw ? JSON.parse(savedOrganizationRaw) as OrganizationSummary : null; } catch { savedOrganizationCandidate = null; }
+      const savedOrganization = savedOrganizationCandidate ? resolveOrganizationSelection(availableOrganizations, savedOrganizationCandidate.id) : null;
+      const existingOrganization = resolveOrganizationSelection(availableOrganizations) ?? savedOrganization ?? await getMyOrganization(restoredSession);
       if (cancelled || !existingOrganization) return;
       setOrganization(existingOrganization);
       window.localStorage.setItem("youb-organization", JSON.stringify(existingOrganization));
@@ -105,7 +108,7 @@ export default function Onboarding() {
       const availableOrganizations = await getMyOrganizations(authenticatedSession);
       setOrganizations(availableOrganizations);
       if (availableOrganizations.length > 1) {
-        setSelectedOrganizationId(availableOrganizations[0].id);
+        setSelectedOrganizationId("");
         setStep("organization-select");
       } else if (resolveOrganizationSelection(availableOrganizations)) {
         const selectedOrganization = resolveOrganizationSelection(availableOrganizations)!;
