@@ -1,21 +1,20 @@
 # Release validation checkpoint
 
-No new infrastructure or paid service was provisioned. Lovable visual files were not changed.
+This checkpoint covers the existing youB SaaS only. No new Supabase project, paid service, Commercial Experience, or hosted test fixture was created.
 
-## Applied and verified on existing database
-- Fixed search_path on four snapshot helpers. All four returned JSON for null composite inputs.
-- Removed anonymous EXECUTE from 22 business RPCs, preserving authenticated and service_role grants. Verified zero anonymous permissions and zero missing authenticated grants for the exact target list.
-- Fixed new-admin PDI checkin failure: an admin without an employee record now writes author_user_id from auth.uid(). Existing employee attribution is preserved; authorization and tenant scope checks unchanged.
-- Ran rollback-only SQL fixture test with two synthetic auth users and organizations: organization creation, employee creation, cycle creation, PDI creation/activation/objective/action/checkin/completion; second tenant cannot read employee/PDI or create PDI in first tenant. Verified author identity and no residual QA auth users.
-- Four mutable search_path advisor warnings cleared. One anonymous SECURITY DEFINER warning remains for platform event trigger rls_auto_enable; 76 authenticated SECURITY DEFINER advisories require contextual review, not blanket revocation. Leaked password protection remains disabled; no paid upgrade enabled.
+## Corrigido e validado localmente/CI
+- Account-to-employee onboarding now uses the existing flow: the employee creates Auth first, then an authorized admin_youb/diretoria links the same email to one tenant and assigns an existing role. Cross-tenant, ambiguous, duplicate, and invalid-role links are rejected by the RPC.
+- Organization selection and employee context fail closed for multiple organizations or ambiguous memberships; a saved organization is accepted only if it is in the authenticated membership list.
+- PR #26 merged the onboarding correction at `664d568efcf6d7dad952646aecddc5649a9f1ed7`.
+- PR #27 merged the audited RPC ACL/search_path/PDI hardening and executable regression coverage at `65a2dc1f177fa1c896cc526ab57c057fc4ad6fa3`. The required GitHub build passed, including workspace build, Bee/classic access tests, migrations, SQL/RLS suites, onboarding membership coverage, and RPC security coverage.
 
-## Important scope correction
-Seven Ambient tables are absent on hosted database AND Ambient is absent in main c174836a681823abc9b0fe8d00450d732f2509e0. This is an unintegrated feature, not evidence that current main is missing its migrations. Do not deploy Ambient merely to clear a dashboard warning.
+## Validado hospedado, somente leitura
+- Existing project `youB Multiempresa` (`eqyzswhxjzzzwtwnenur`) is active/healthy. The PR #25 security migrations are present; the 22 privileged RPC ACL checks and four snapshot search_path checks returned zero violations.
+- The onboarding membership migration is **not** applied to the hosted project yet: `public.link_organization_user(...)` is absent. No hosted data was written during this checkpoint.
+- `public.rls_auto_enable()` remains an observed platform event-trigger function (`RETURNS event_trigger`, attached to `ensure_rls`), not a normal business RPC; it was not changed.
 
-## Remaining release gates
-1. Confirm the exact Lovable integration branch and test its UI with real sign-in, refresh, logout and role accounts. SQL role simulation is NOT an Auth/browser E2E test.
-2. Validate the complete assessment-to-PDI UI journey and displayed results; current new regression tests cycle creation, not full assessment completion.
-3. Review PR #25 CI before merge; database migrations already applied and recorded by matching hosted version numbers. Do not reapply hosted migrations or merge visual branches blindly.
-4. Validate emails/invites using approved test inboxes; do not send to customers.
+## Not proven hosted
+- No real Auth signup/login, session restore, logout, multi-role browser journey, or end-to-end empty-state acceptance was submitted against the current production-like data. No disposable hosted environment is available, and no real account was created.
 
-No claim that the entire SaaS is ready for production is made at this checkpoint.
+## Release decision
+The code and CI gates are closed, but the hosted environment is not fully release-closed until the onboarding migration is explicitly authorized and applied to the existing project, followed by a controlled acceptance check. No claim of whole-SaaS production readiness is made here.
