@@ -88,4 +88,4 @@ end;
 $$;
 
 revoke all on function public.link_organization_user(uuid, text, text, uuid) from public, anon;
-grant execute on function public.link_organization_user(uuid, text, text, uuid) to authenticated;
+grant execute on function public.link_organization_user(uuid, text, text, uuid) to authenticated, service_role;

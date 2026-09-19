@@ -37,6 +37,9 @@ end $$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', false);
 
+select pg_temp.assert_true('anonymous execute revoked', not has_function_privilege('anon', 'public.link_organization_user(uuid,text,text,uuid)', 'EXECUTE'));
+select pg_temp.assert_true('authenticated execute granted', has_function_privilege('authenticated', 'public.link_organization_user(uuid,text,text,uuid)', 'EXECUTE'));
+select pg_temp.assert_true('service role execute granted', has_function_privilege('service_role', 'public.link_organization_user(uuid,text,text,uuid)', 'EXECUTE'));
 select pg_temp.assert_true('RH linked', exists (select 1 from public.link_organization_user('c4000000-0000-0000-0000-000000000001', 'rh@example.invalid', 'rh', 'c4000000-0000-0000-0000-000000000011')));
 select pg_temp.assert_true('Diretoria linked', exists (select 1 from public.link_organization_user('c4000000-0000-0000-0000-000000000001', 'diretoria@example.invalid', 'diretoria', 'c4000000-0000-0000-0000-000000000012')));
 select pg_temp.assert_true('Gestor linked', exists (select 1 from public.link_organization_user('c4000000-0000-0000-0000-000000000001', 'gestor@example.invalid', 'gestor', 'c4000000-0000-0000-0000-000000000013')));
