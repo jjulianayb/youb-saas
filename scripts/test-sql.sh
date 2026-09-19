@@ -60,3 +60,5 @@ echo "DATA_ARCHITECTURE_P0_CONCURRENCY_SQL_SUITE=PASS"
 # This suite controls its own transaction and rolls back synthetic users and tenant data.
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$repo_root/supabase/tests/release_admin_pdi_transactional.sql" > /dev/null 2>>"$log_file"
 echo "RELEASE_ADMIN_PDI_TRANSACTIONAL_SUITE=PASS"
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$repo_root/supabase/tests/rpc_security_hardening_v1.sql" > /dev/null 2>>"$log_file"
+echo "RPC_SECURITY_HARDENING_SUITE=PASS"
