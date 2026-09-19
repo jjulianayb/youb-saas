@@ -137,6 +137,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const [employeePosition, setEmployeePosition] = useState("");
   const [employeeSeniority, setEmployeeSeniority] = useState<"" | "junior" | "pleno" | "senior">("");
   const [employeeManager, setEmployeeManager] = useState("");
+  const [employeeRole, setEmployeeRole] = useState<"" | "diretoria" | "rh" | "gestor" | "colaborador">("");
   const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
   const [historyEmployee, setHistoryEmployee] = useState("");
   const [areaName, setAreaName] = useState("");
