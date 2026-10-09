@@ -41,6 +41,71 @@ type LocalStorageLike = { getItem: (key: string) => string | null; setItem: (key
 function localStorageOrNull(): LocalStorageLike | null { return (globalThis as typeof globalThis & { window?: { localStorage?: LocalStorageLike } }).window?.localStorage ?? null; }
 export function sessionNeedsRefresh(session: SupabaseSession, now = Date.now()): boolean { return Boolean(session.refresh_token && (!session.expires_at || session.expires_at <= Math.floor(now / 1000) + 60)); }
 export async function refreshSession(session: SupabaseSession): Promise<SupabaseSession> { if (!session.refresh_token) return session; return sessionFromAuth(await authRequest("token?grant_type=refresh_token", { refresh_token: session.refresh_token }), session.refresh_token); }
+
+const refreshRequests = new Map<string, Promise<SupabaseSession>>();
+function refreshSessionOnce(session: SupabaseSession): Promise<SupabaseSession> {
+  const current = refreshRequests.get(session.user.id);
+  if (current) return current;
+  const refresh = refreshSession(session).finally(() => refreshRequests.delete(session.user.id));
+  refreshRequests.set(session.user.id, refresh);
+  return refresh;
+}
+function storedSessionFor(userId: string, fallback: SupabaseSession): SupabaseSession {
+  const storage = localStorageOrNull();
+  try {
+    const value = storage?.getItem("youb-session");
+    const saved = value ? JSON.parse(value) as SupabaseSession : null;
+    return saved?.user?.id === userId && saved.access_token ? saved : fallback;
+  } catch { return fallback; }
+}
+function persistSession(session: SupabaseSession): void { localStorageOrNull()?.setItem("youb-session", JSON.stringify(session)); }
+function clearSession(userId: string): void {
+  const storage = localStorageOrNull();
+  if (!storage) return;
+  try {
+    const value = storage.getItem("youb-session");
+    const saved = value ? JSON.parse(value) as SupabaseSession : null;
+    if (saved?.user?.id && saved.user.id !== userId) return;
+  } catch { /* clear malformed session for the current browser */ }
+  storage.removeItem("youb-session");
+  storage.removeItem("youb-organization");
+}
+
+/** Uses the newest persisted access token and retries one unauthorized request after refresh. */
+export async function authenticatedFetch(session: SupabaseSession, input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  let active = storedSessionFor(session.user.id, session);
+  const send = (token: SupabaseSession) => {
+    const headers = new Headers(init.headers);
+    headers.set("Authorization", `Bearer ${token.access_token}`);
+    return fetch(input, { ...init, headers });
+  };
+  const refreshOrExpire = async (): Promise<SupabaseSession> => {
+    if (!active.refresh_token) {
+      clearSession(active.user.id);
+      throw new Error("Sua sessão expirou. Entre novamente na youB.");
+    }
+    try {
+      active = await refreshSessionOnce(active);
+      persistSession(active);
+      return active;
+    } catch {
+      clearSession(active.user.id);
+      throw new Error("Sua sessão expirou. Entre novamente na youB.");
+    }
+  };
+
+  if (sessionNeedsRefresh(active)) await refreshOrExpire();
+  let response = await send(active);
+  if (response.status !== 401) return response;
+  await refreshOrExpire();
+  response = await send(active);
+  if (response.status === 401) {
+    clearSession(active.user.id);
+    throw new Error("Sua sessão expirou. Entre novamente na youB.");
+  }
+  return response;
+}
+
 export async function restoreSession(): Promise<SupabaseSession | null> { const storage = localStorageOrNull(); if (!storage) return null; try { const raw = storage.getItem("youb-session"); if (!raw) return null; const saved = JSON.parse(raw) as SupabaseSession; const fresh = sessionNeedsRefresh(saved) ? await refreshSession(saved) : saved; storage.setItem("youb-session", JSON.stringify(fresh)); return fresh; } catch { storage.removeItem("youb-session"); storage.removeItem("youb-organization"); return null; } }
 
 export type EmployeeExperienceContext = { organization: { id: string; name: string; slug: string }; membership: { role: "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador" }; employee: { id: string; full_name: string; email?: string | null } | null; employeeId: string | null; capabilities: string[] };
@@ -48,9 +113,9 @@ export function commercialExperienceForRole(role: EmployeeExperienceContext["mem
 const roleCapabilities: Record<EmployeeExperienceContext["membership"]["role"], string[]> = { admin_youb: ["read:organization", "manage:organization", "read:intelligence"], diretoria: ["read:organization", "decide:intelligence", "read:published-knowledge"], rh: ["read:organization", "manage:people", "read:published-knowledge"], gestor: ["read:team-scope", "manage:team-scope", "read:published-knowledge"], colaborador: ["read:own-context", "read:published-knowledge"] };
 export type OrganizationSummary = { id: string; name: string; slug: string };
 export function resolveOrganizationSelection(organizations: readonly OrganizationSummary[], selectedId?: string): OrganizationSummary | null { if (selectedId) return organizations.find((item) => item.id === selectedId) ?? null; return organizations.length === 1 ? organizations[0] : null; }
-export async function getMyOrganizations(session: SupabaseSession): Promise<OrganizationSummary[]> { if (!isSupabaseConfigured) return []; const headers = { apikey: supabaseAnonKey!, Authorization: `Bearer ${session.access_token}` }; const membershipResponse = await fetch(`${supabaseUrl}/rest/v1/memberships?select=organization_id&user_id=eq.${encodeURIComponent(session.user.id)}`, { headers }); if (!membershipResponse.ok) return []; const memberships = (await membershipResponse.json()) as Array<{ organization_id?: string }>; const ids = [...new Set(memberships.map((item) => item.organization_id).filter((id): id is string => Boolean(id)))]; if (!ids.length) return []; const organizationResponse = await fetch(`${supabaseUrl}/rest/v1/organizations?select=id,name,slug&id=in.(${ids.map(encodeURIComponent).join(",")})&order=name`, { headers }); if (!organizationResponse.ok) return []; const organizations = (await organizationResponse.json()) as Array<{ id?: string; name?: string; slug?: string }>; return organizations.filter((item): item is OrganizationSummary => Boolean(item.id && item.name && item.slug)).map((item) => ({ id: item.id, name: item.name, slug: item.slug })); }
-export async function getEmployeeExperienceContext(session: SupabaseSession, organizationId?: string): Promise<EmployeeExperienceContext | null> { if (!isSupabaseConfigured) return null; const headers = { apikey: supabaseAnonKey!, Authorization: `Bearer ${session.access_token}` }; const organizationFilter = organizationId ? `&organization_id=eq.${encodeURIComponent(organizationId)}` : ""; const membershipResponse = await fetch(`${supabaseUrl}/rest/v1/memberships?select=organization_id,role&user_id=eq.${encodeURIComponent(session.user.id)}${organizationFilter}&limit=2`, { headers }); if (!membershipResponse.ok) return null; const memberships = (await membershipResponse.json()) as Array<{ organization_id?: string; role?: EmployeeExperienceContext["membership"]["role"] }>; if (!organizationId && memberships.length !== 1) return null; const membership = memberships[0]; if (!membership?.organization_id || !membership.role || !(membership.role in roleCapabilities)) return null; const organizationResponse = await fetch(`${supabaseUrl}/rest/v1/organizations?select=id,name,slug&id=eq.${encodeURIComponent(membership.organization_id)}&limit=1`, { headers }); if (!organizationResponse.ok) return null; const organizations = (await organizationResponse.json()) as Array<{ id?: string; name?: string; slug?: string }>; const organization = organizations[0]; if (!organization?.id || !organization.name || !organization.slug) return null; const employeeResponse = await fetch(`${supabaseUrl}/rest/v1/employees?select=id,full_name,email,auth_user_id&organization_id=eq.${encodeURIComponent(organization.id)}&auth_user_id=eq.${encodeURIComponent(session.user.id)}&limit=2`, { headers }); const employees = employeeResponse.ok ? (await employeeResponse.json()) as Array<{ id?: string; full_name?: string; email?: string | null; auth_user_id?: string | null }> : []; const employee = employees.length === 1 && employees[0]?.id && employees[0].full_name ? { id: employees[0].id, full_name: employees[0].full_name, email: employees[0].email } : null; return { organization: { id: organization.id, name: organization.name, slug: organization.slug }, membership: { role: membership.role }, employee, employeeId: employee?.id ?? null, capabilities: roleCapabilities[membership.role] }; }
+export async function getMyOrganizations(session: SupabaseSession): Promise<OrganizationSummary[]> { if (!isSupabaseConfigured) return []; const headers = { apikey: supabaseAnonKey!, Authorization: `Bearer ${session.access_token}` }; const membershipResponse = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/memberships?select=organization_id&user_id=eq.${encodeURIComponent(session.user.id)}`, { headers }); if (!membershipResponse.ok) return []; const memberships = (await membershipResponse.json()) as Array<{ organization_id?: string }>; const ids = [...new Set(memberships.map((item) => item.organization_id).filter((id): id is string => Boolean(id)))]; if (!ids.length) return []; const organizationResponse = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/organizations?select=id,name,slug&id=in.(${ids.map(encodeURIComponent).join(",")})&order=name`, { headers }); if (!organizationResponse.ok) return []; const organizations = (await organizationResponse.json()) as Array<{ id?: string; name?: string; slug?: string }>; return organizations.filter((item): item is OrganizationSummary => Boolean(item.id && item.name && item.slug)).map((item) => ({ id: item.id, name: item.name, slug: item.slug })); }
+export async function getEmployeeExperienceContext(session: SupabaseSession, organizationId?: string): Promise<EmployeeExperienceContext | null> { if (!isSupabaseConfigured) return null; const headers = { apikey: supabaseAnonKey!, Authorization: `Bearer ${session.access_token}` }; const organizationFilter = organizationId ? `&organization_id=eq.${encodeURIComponent(organizationId)}` : ""; const membershipResponse = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/memberships?select=organization_id,role&user_id=eq.${encodeURIComponent(session.user.id)}${organizationFilter}&limit=2`, { headers }); if (!membershipResponse.ok) return null; const memberships = (await membershipResponse.json()) as Array<{ organization_id?: string; role?: EmployeeExperienceContext["membership"]["role"] }>; if (!organizationId && memberships.length !== 1) return null; const membership = memberships[0]; if (!membership?.organization_id || !membership.role || !(membership.role in roleCapabilities)) return null; const organizationResponse = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/organizations?select=id,name,slug&id=eq.${encodeURIComponent(membership.organization_id)}&limit=1`, { headers }); if (!organizationResponse.ok) return null; const organizations = (await organizationResponse.json()) as Array<{ id?: string; name?: string; slug?: string }>; const organization = organizations[0]; if (!organization?.id || !organization.name || !organization.slug) return null; const employeeResponse = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/employees?select=id,full_name,email,auth_user_id&organization_id=eq.${encodeURIComponent(organization.id)}&auth_user_id=eq.${encodeURIComponent(session.user.id)}&limit=2`, { headers }); const employees = employeeResponse.ok ? (await employeeResponse.json()) as Array<{ id?: string; full_name?: string; email?: string | null; auth_user_id?: string | null }> : []; const employee = employees.length === 1 && employees[0]?.id && employees[0].full_name ? { id: employees[0].id, full_name: employees[0].full_name, email: employees[0].email } : null; return { organization: { id: organization.id, name: organization.name, slug: organization.slug }, membership: { role: membership.role }, employee, employeeId: employee?.id ?? null, capabilities: roleCapabilities[membership.role] }; }
 
 export function slugify(value: string): string { const normalized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); return normalized || "minha-empresa"; }
-export async function createOrganization(session: SupabaseSession, name: string): Promise<{ id: string; name: string; slug: string }> { if (!isSupabaseConfigured) throw new Error("O ambiente ainda não está conectado ao Supabase."); const response = await fetch(`${supabaseUrl}/rest/v1/rpc/create_organization`, { method: "POST", headers: { apikey: supabaseAnonKey!, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ p_name: name, p_slug: slugify(name) }) }); const body = (await response.json()) as { id?: string; name?: string; slug?: string; message?: string; hint?: string }; if (!response.ok || !body.id || !body.name || !body.slug) throw new Error(getErrorMessage(body)); return { id: body.id, name: body.name, slug: body.slug }; }
+export async function createOrganization(session: SupabaseSession, name: string): Promise<{ id: string; name: string; slug: string }> { if (!isSupabaseConfigured) throw new Error("O ambiente ainda não está conectado ao Supabase."); const response = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/rpc/create_organization`, { method: "POST", headers: { apikey: supabaseAnonKey!, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ p_name: name, p_slug: slugify(name) }) }); const body = (await response.json()) as { id?: string; name?: string; slug?: string; message?: string; hint?: string }; if (!response.ok || !body.id || !body.name || !body.slug) throw new Error(getErrorMessage(body)); return { id: body.id, name: body.name, slug: body.slug }; }
 export async function getMyOrganization(session: SupabaseSession): Promise<{ id: string; name: string; slug: string } | null> { const context = await getEmployeeExperienceContext(session); return context?.organization ?? null; }

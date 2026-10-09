@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import type { SupabaseSession } from "../../lib/supabase";
+import { authenticatedFetch, type SupabaseSession } from "../../lib/supabase";
 import { pdiRpc } from "../../features/pdi-development/service";
 
 type Organization = { id: string; name: string };
@@ -31,7 +31,7 @@ const secondaryButtonClassName = "rounded-xl border border-slate-200 px-4 py-2.5
 
 async function rest<T>(session: SupabaseSession, path: string): Promise<T> {
   if (!supabaseUrl || !supabaseAnonKey) throw new Error("O ambiente ainda não está conectado ao Supabase.");
-  const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${session.access_token}` } });
+  const response = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/${path}`, { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${session.access_token}` } });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.message ?? "Não foi possível carregar o PDI.");
   return body as T;

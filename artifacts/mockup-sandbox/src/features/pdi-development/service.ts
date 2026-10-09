@@ -1,4 +1,4 @@
-import type { SupabaseSession } from "../../lib/supabase";
+import { authenticatedFetch, type SupabaseSession } from "../../lib/supabase";
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "");
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -29,7 +29,7 @@ export type PdiRpc =
 
 export async function pdiRpc<T>(session: SupabaseSession, rpc: PdiRpc, parameters: Record<string, unknown>): Promise<T> {
   if (!supabaseUrl || !supabaseAnonKey) throw new Error("O ambiente ainda não está conectado ao Supabase.");
-  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
+  const response = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/rpc/${rpc}`, {
     method: "POST",
     headers: {
       apikey: supabaseAnonKey,

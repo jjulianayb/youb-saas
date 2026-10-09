@@ -1,4 +1,4 @@
-import type { SupabaseSession } from "../../lib/supabase";
+import { authenticatedFetch, type SupabaseSession } from "../../lib/supabase";
 import type { IntelligenceReadContext } from "../intelligence-core/types";
 
 const env = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env ?? {};
@@ -43,8 +43,8 @@ type PopulationResult = { employeeIds: string[]; mode: DhoPopulationMode; availa
 
 function config(): { url: string; key: string } { if (!supabaseUrl || !supabaseAnonKey) throw new Error("O ambiente ainda não está conectado ao Supabase."); return { url: supabaseUrl, key: supabaseAnonKey }; }
 function q(value: string): string { return encodeURIComponent(value); }
-async function get<T>(session: SupabaseSession, table: string, select: string, filters: string): Promise<T[]> { const { url, key } = config(); const response = await fetch(`${url}/rest/v1/${table}?select=${q(select)}&${filters}`, { headers: { apikey: key, Authorization: `Bearer ${session.access_token}` } }); if (!response.ok) throw new Error(`DHO source ${table} is not available`); return (await response.json()) as T[]; }
-async function rpc<T>(session: SupabaseSession, name: string, body: Record<string, unknown>): Promise<T[]> { const { url, key } = config(); const response = await fetch(`${url}/rest/v1/rpc/${name}`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); if (!response.ok) throw new Error(`DHO RPC ${name} is not available`); return (await response.json()) as T[]; }
+async function get<T>(session: SupabaseSession, table: string, select: string, filters: string): Promise<T[]> { const { url, key } = config(); const response = await authenticatedFetch(session, `${url}/rest/v1/${table}?select=${q(select)}&${filters}`, { headers: { apikey: key, Authorization: `Bearer ${session.access_token}` } }); if (!response.ok) throw new Error(`DHO source ${table} is not available`); return (await response.json()) as T[]; }
+async function rpc<T>(session: SupabaseSession, name: string, body: Record<string, unknown>): Promise<T[]> { const { url, key } = config(); const response = await authenticatedFetch(session, `${url}/rest/v1/rpc/${name}`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); if (!response.ok) throw new Error(`DHO RPC ${name} is not available`); return (await response.json()) as T[]; }
 async function load<T>(loader: () => Promise<T[]>): Promise<LoadResult<T>> { try { const items = await loader(); return { items, status: items.length ? "available" : "empty" }; } catch { return { items: [], status: "unavailable", limitation: "Fonte DHO indisponível ou sem autorização para esta leitura." }; } }
 function inFilter(ids: readonly string[]): string { return ids.length ? `in.(${ids.map(q).join(",")})` : "eq.00000000-0000-0000-0000-000000000000"; }
 

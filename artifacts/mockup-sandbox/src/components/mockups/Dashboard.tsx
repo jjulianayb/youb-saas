@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import type { SupabaseSession } from "../../lib/supabase";
+import { authenticatedFetch, type SupabaseSession } from "../../lib/supabase";
 import { EMPTY_UUID, employeeQueryFilters, feedbackRelationFilter, relatedQueryFilters } from "../../features/classic-dho-access";
 import CompetencyCycleAssessment from "./CompetencyCycleAssessment";
 import Feedback360Evolution from "./Feedback360Evolution";
@@ -30,9 +30,9 @@ type DashboardProps = {
   onLogout: () => void;
 };
 
-const inputClassName = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
-const buttonClassName = "rounded-xl bg-[#1e3a6e] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#152c57] disabled:cursor-not-allowed disabled:opacity-50";
-const secondaryButtonClassName = "rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50";
+const inputClassName = "mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100";
+const buttonClassName = "rounded-lg bg-[#7656bd] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#60439f] disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryButtonClassName = "rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50";
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "");
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -47,7 +47,7 @@ function getErrorMessage(body: unknown): string {
 
 async function apiRequest<T>(session: SupabaseSession, path: string, options: RequestInit = {}): Promise<T> {
   if (!supabaseUrl || !supabaseAnonKey) throw new Error("O ambiente ainda não está conectado ao Supabase.");
-  const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+  const response = await authenticatedFetch(session, `${supabaseUrl}/rest/v1/${path}`, {
     ...options,
     headers: {
       apikey: supabaseAnonKey,
@@ -373,14 +373,14 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   }
 
   const navItems: Array<{ id: View; label: string; icon: string }> = [
-    { id: "overview", label: "Visão geral", icon: "⌂" },
-    { id: "team", label: "Equipe", icon: "♙" },
-    { id: "employee-history", label: "Histórico individual", icon: "▤" },
-    { id: "checkins", label: "Clima & check-ins", icon: "♥" },
-    { id: "competency-journey", label: "Jornada V1", icon: "◆" },
+    { id: "overview", label: userRole === "gestor" ? "Meu dia" : userRole === "rh" ? "Workspace" : "Visão geral", icon: "⌂" },
+    { id: "team", label: userRole === "gestor" ? "Meu time" : "Pessoas", icon: "♙" },
+    { id: "employee-history", label: userRole === "gestor" ? "Pessoas do time" : "Histórico", icon: "▤" },
+    { id: "checkins", label: userRole === "gestor" ? "Sinais do time" : "Clima & check-ins", icon: "♥" },
+    { id: "competency-journey", label: "Desenvolvimento", icon: "◆" },
     { id: "feedback-360", label: "Feedback 360", icon: "◈" },
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
-    { id: "pdis", label: "PDIs", icon: "◎" },
+    { id: "pdis", label: userRole === "gestor" ? "PDIs do time" : "PDIs", icon: "◎" },
   ];
   const visibleNavItems = navItems.filter((item) => {
     if (!userRole || userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh") return true;
@@ -392,20 +392,24 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const canManageDevelopment = userRole === "admin_youb" || userRole === "rh" || userRole === "gestor";
 
   return (
-    <main className="min-h-screen bg-[#f5f8fc] text-slate-900">
-      <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="w-full bg-[#102654] p-5 text-white lg:w-64 lg:p-6">
-          <div className="flex items-baseline gap-1 px-2"><span className="text-2xl font-light text-white/75">you</span><span className="text-3xl font-extrabold">B</span></div>
-          <div className="mt-8 rounded-2xl bg-white/10 p-4"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100/70">Empresa</p><p className="mt-1 truncate font-bold">{organization.name}</p><p className="mt-1 truncate text-xs text-blue-100/65">{organization.slug}</p></div>
-          <nav className="mt-8 grid grid-cols-2 gap-2 lg:block lg:space-y-1">
-            {visibleNavItems.map((item) => <button key={item.id} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${view === item.id ? "bg-white text-[#102654]" : "text-blue-100/80 hover:bg-white/10 hover:text-white"}`} onClick={() => { resetMessages(); setView(item.id); }} type="button"><span className="w-5 text-center text-lg">{item.icon}</span>{item.label}</button>)}
-          </nav>
-          <button className="mt-8 w-full rounded-xl border border-white/20 px-3 py-3 text-left text-sm font-semibold text-blue-100/80 hover:bg-white/10 hover:text-white" onClick={onLogout} type="button">↩ Sair</button>
-        </aside>
-
-        <section className="flex-1 p-5 sm:p-8 lg:p-10">
-          <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel de pessoas</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 text-sm text-slate-500">Acompanhe o desenvolvimento da sua equipe em um só lugar.</p></div><div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><span className="text-slate-400">Perfil </span><strong className="text-[#1e3a6e]">{roleLabel(userRole)}</strong><span className="mx-2 text-slate-300">·</span><span className="text-slate-400">Plano </span><strong className="text-[#1e3a6e]">Essencial</strong></div></header>
-          <div className="mx-auto mt-8 max-w-6xl">{notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}{error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
+    <main className="youb-app-shell">
+      <header className="youb-app-topbar">
+        <div className="youb-brand" aria-label="youB"><span>you</span><b>B</b></div>
+        <nav className="youb-desktop-nav" aria-label="Navegação principal da youB">
+          {visibleNavItems.map((item) => <button key={item.id} aria-current={view === item.id ? "page" : undefined} className={view === item.id ? "active" : ""} onClick={() => { resetMessages(); setView(item.id); }} type="button"><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}
+        </nav>
+        <div className="youb-account"><span><small>{organization.name}</small><strong>{roleLabel(userRole)}</strong></span><button onClick={onLogout} type="button">Sair</button></div>
+      </header>
+      <nav className="youb-mobile-nav" aria-label="Navegação móvel da youB">
+        {visibleNavItems.map((item) => <button key={item.id} aria-current={view === item.id ? "page" : undefined} className={view === item.id ? "active" : ""} onClick={() => { resetMessages(); setView(item.id); }} type="button"><span aria-hidden="true">{item.icon}</span><small>{item.label}</small></button>)}
+      </nav>
+      <section className="youb-product-content">
+        <header className="youb-page-heading">
+          <div><p>{view === "overview" ? "youB · Pessoas, potencial e progresso" : organization.name}</p><h1>{view === "overview" ? `Olá, ${firstName}.` : visibleNavItems.find((item) => item.id === view)?.label ?? "youB"}</h1><span>{view === "overview" ? "Acompanhe o desenvolvimento da sua equipe em um só lugar." : `Contexto autorizado para ${roleLabel(userRole).toLowerCase()}.`}</span></div>
+          {view !== "overview" && <div className="youb-page-context"><strong>{firstName}</strong><small>Plano Essencial</small></div>}
+        </header>
+        <div className="youb-page-body">
+{notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}{error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
             {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Carregando os dados da empresa...</div> : <>
               {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
               {view === "competency-journey" && userRole && userRole !== "colaborador" && <CompetencyCycleAssessment session={session} organization={organization} role={userRole} employeeId={authenticatedEmployeeId} />}
@@ -425,14 +429,14 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
               {view === "assessments" && <ModuleSection title="Avaliações" description="Crie avaliações vinculadas a um ciclo e acompanhe o preenchimento.">{canManageAssessments && <form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-3" onSubmit={createAssessment}><label className="text-xs font-bold text-slate-600">Pessoa avaliada<select className={inputClassName} value={assessmentEmployee} onChange={(event) => setAssessmentEmployee(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Ciclo<select className={inputClassName} value={assessmentCycle} onChange={(event) => setAssessmentCycle(event.target.value)} required><option value="">Selecione</option>{cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}</select></label><div className="flex items-end"><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Nova avaliação"}</button></div></form>}<div className="space-y-3">{assessments.length === 0 ? <EmptyState text="Crie a primeira avaliação da sua equipe." /> : assessments.map((assessment) => <div className="flex flex-col justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={assessment.id}><div><h3 className="font-bold">{employeeNames.get(assessment.subject_employee_id) ?? "Pessoa da equipe"}</h3><p className="mt-1 text-sm text-slate-500">{cycleNames.get(assessment.cycle_id) ?? "Ciclo"} · criada em {formatDate(assessment.created_at.slice(0, 10))}</p></div><StatusPill status="draft" /></div>)}</div></ModuleSection>}
               {view === "feedbacks" && <ModuleSection title="Feedbacks" description="Registre conversas importantes e mantenha uma cultura de desenvolvimento contínuo.">{canManageDevelopment && <form className="mb-6 space-y-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={createFeedback}><label className="block text-xs font-bold text-slate-600">Pessoa que receberá o feedback<select className={inputClassName} value={feedbackTarget} onChange={(event) => setFeedbackTarget(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="block text-xs font-bold text-slate-600">Mensagem<textarea className={inputClassName} rows={3} value={feedbackContent} onChange={(event) => setFeedbackContent(event.target.value)} placeholder="Escreva um feedback claro e construtivo..." required /></label><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Registrar feedback"}</button></form>}<div className="space-y-3">{feedbacks.length === 0 ? <EmptyState text="Nenhum feedback registrado ainda." /> : feedbacks.map((feedback) => <div className="rounded-2xl border border-slate-200 bg-white p-5" key={feedback.id}><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">Para {employeeNames.get(feedback.target_employee_id) ?? "pessoa da equipe"}</h3><span className="text-xs text-slate-400">{formatDate(feedback.created_at.slice(0, 10))}</span></div><p className="mt-3 text-sm leading-6 text-slate-600">{feedback.content}</p></div>)}</div></ModuleSection>}
               {view === "pdis" && <ModuleSection title="Planos de desenvolvimento individual" description="Transforme conversas em objetivos e próximos passos acompanháveis.">{(canManageDevelopment || userRole === "colaborador") && <form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-3" onSubmit={createPdi}><label className="text-xs font-bold text-slate-600">Pessoa<select className={inputClassName} value={pdiEmployee} onChange={(event) => setPdiEmployee(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="text-xs font-bold text-slate-600 md:col-span-2">Objetivo<input className={inputClassName} value={pdiObjective} onChange={(event) => setPdiObjective(event.target.value)} placeholder="Ex.: Desenvolver liderança" required /></label><label className="text-xs font-bold text-slate-600">Prazo<input className={inputClassName} type="date" value={pdiDueDate} onChange={(event) => setPdiDueDate(event.target.value)} /></label><button className={`${buttonClassName} md:col-span-3 md:w-fit`} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Criar PDI"}</button></form>}<PdiDevelopment session={session} organization={organization} employees={employees} pdis={pdis} userRole={userRole ?? ""} onRefresh={loadData} onNotice={(message) => setNotice(message)} onError={(message) => setError(message)} /></ModuleSection>}
-            </>}</div>
-        </section>
-      </div>
+            </>}
+        </div>
+      </section>
     </main>
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string | number }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-extrabold text-[#1e3a6e]">{value}</p></div>; }
+function MetricCard({ label, value }: { label: string; value: string | number }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-extrabold text-[#7656bd]">{value}</p></div>; }
 function RatingSelect({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="text-xs font-bold text-slate-600">{label}<select className={inputClassName} value={value} onChange={(event) => onChange(event.target.value)}>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score} — {score === 1 ? "Muito baixo" : score === 2 ? "Baixo" : score === 3 ? "Regular" : score === 4 ? "Bom" : "Excelente"}</option>)}</select></label>; }
 
 function OrgChart({ employees, areas, areaNames, positionNames }: { employees: Employee[]; areas: Area[]; areaNames: Map<string, string>; positionNames: Map<string, string> }) {
@@ -449,7 +453,7 @@ function OrgChart({ employees, areas, areaNames, positionNames }: { employees: E
 
   function renderGroup(areaName: string, people: Employee[], key: string, muted = false) {
     const roots = people.filter((person) => !people.some((candidate) => candidate.id === person.manager_employee_id));
-    return <div className={`min-w-[240px] flex-1 rounded-2xl border p-4 ${muted ? "border-dashed border-slate-300 bg-slate-50" : "border-blue-100 bg-blue-50/50"}`} key={key}><div className={`border-b pb-3 ${muted ? "border-slate-200" : "border-blue-100"}`}><p className={`text-xs font-bold uppercase tracking-[0.12em] ${muted ? "text-slate-500" : "text-blue-600"}`}>{muted ? "A organizar" : "Setor"}</p><h4 className={`mt-1 font-extrabold ${muted ? "text-slate-700" : "text-[#1e3a6e]"}`}>{areaName}</h4></div><div className="mt-3 space-y-2">{roots.map((person) => renderPerson(person, people))}</div></div>;
+    return <div className={`min-w-[240px] flex-1 rounded-2xl border p-4 ${muted ? "border-dashed border-slate-300 bg-slate-50" : "border-blue-100 bg-blue-50/50"}`} key={key}><div className={`border-b pb-3 ${muted ? "border-slate-200" : "border-blue-100"}`}><p className={`text-xs font-bold uppercase tracking-[0.12em] ${muted ? "text-slate-500" : "text-blue-600"}`}>{muted ? "A organizar" : "Setor"}</p><h4 className={`mt-1 font-extrabold ${muted ? "text-slate-700" : "text-[#7656bd]"}`}>{areaName}</h4></div><div className="mt-3 space-y-2">{roots.map((person) => renderPerson(person, people))}</div></div>;
   }
 
   return <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6"><div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><div><h3 className="text-lg font-bold">Organograma automático</h3><p className="mt-1 text-sm text-slate-500">Setores, cargos e relações de gestão atualizados a cada cadastro.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Atualizado agora</span></div>{employees.length === 0 ? <EmptyState text="Cadastre pessoas para visualizar o organograma." /> : <div className="mt-6 flex flex-wrap gap-4">{grouped.map((group) => renderGroup(group.area.name, group.people, group.area.id))}{withoutArea.length > 0 && renderGroup("Sem setor", withoutArea, "without-area", true)}</div>}</div>;
@@ -491,7 +495,7 @@ function employeeNamesForHistory(employees: Employee[], id?: string | null): str
 
 function Overview({ employees, cycles, feedbacks, pdis, activeCycles, pendingPdis, onView }: { employees: Employee[]; cycles: Cycle[]; feedbacks: Feedback[]; pdis: Pdi[]; activeCycles: number; pendingPdis: number; onView: (view: View) => void }) {
   const cards = [{ label: "Pessoas ativas", value: employees.length, view: "overview" as View, tone: "blue" }, { label: "Ciclos ativos", value: activeCycles, view: "cycles" as View, tone: "violet" }, { label: "Feedbacks registrados", value: feedbacks.length, view: "feedbacks" as View, tone: "emerald" }, { label: "PDIs em andamento", value: pendingPdis, view: "pdis" as View, tone: "amber" }];
-  return <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map((card) => <button className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" key={card.label} onClick={() => onView(card.view)} type="button"><div className={`mb-5 h-2 w-12 rounded-full bg-${card.tone}-500`} /><p className="text-sm text-slate-500">{card.label}</p><p className="mt-2 text-3xl font-extrabold">{card.value}</p></button>)}</div><div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="rounded-2xl border border-slate-200 bg-white p-6"><div className="flex items-center justify-between"><div><h2 className="text-lg font-bold">Próximos ciclos</h2><p className="mt-1 text-sm text-slate-500">Mantenha os rituais de desenvolvimento em dia.</p></div><button className={secondaryButtonClassName} onClick={() => onView("competency-journey")} type="button">Ver ciclos</button></div><div className="mt-5 space-y-3">{cycles.slice(0, 3).map((cycle) => <div className="flex items-center justify-between rounded-xl bg-slate-50 p-4" key={cycle.id}><div><p className="font-semibold">{cycle.name}</p><p className="mt-1 text-xs text-slate-500">{formatDate(cycle.starts_at)} → {formatDate(cycle.ends_at)}</p></div><StatusPill status={cycle.status} /></div>)}{cycles.length === 0 && <EmptyState text="Crie um ciclo para começar." />}</div></div><div className="rounded-2xl bg-gradient-to-br from-[#1e3a6e] to-[#315da0] p-6 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-100/70">Próximo passo</p><h2 className="mt-3 text-xl font-bold">Dê contexto ao desenvolvimento.</h2><p className="mt-3 text-sm leading-6 text-blue-100/80">Comece criando um ciclo, registre um feedback ou transforme uma conversa em PDI.</p><div className="mt-6 flex flex-wrap gap-2"><button className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#1e3a6e]" onClick={() => onView("competency-journey")} type="button">Criar ciclo</button><button className="rounded-xl border border-white/30 px-3 py-2 text-xs font-bold text-white" onClick={() => onView("pdis")} type="button">Criar PDI</button></div></div></div></>;
+  return <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map((card) => <button className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" key={card.label} onClick={() => onView(card.view)} type="button"><div className={`mb-5 h-2 w-12 rounded-full bg-${card.tone}-500`} /><p className="text-sm text-slate-500">{card.label}</p><p className="mt-2 text-3xl font-extrabold">{card.value}</p></button>)}</div><div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="rounded-2xl border border-slate-200 bg-white p-6"><div className="flex items-center justify-between"><div><h2 className="text-lg font-bold">Próximos ciclos</h2><p className="mt-1 text-sm text-slate-500">Mantenha os rituais de desenvolvimento em dia.</p></div><button className={secondaryButtonClassName} onClick={() => onView("competency-journey")} type="button">Ver ciclos</button></div><div className="mt-5 space-y-3">{cycles.slice(0, 3).map((cycle) => <div className="flex items-center justify-between rounded-xl bg-slate-50 p-4" key={cycle.id}><div><p className="font-semibold">{cycle.name}</p><p className="mt-1 text-xs text-slate-500">{formatDate(cycle.starts_at)} → {formatDate(cycle.ends_at)}</p></div><StatusPill status={cycle.status} /></div>)}{cycles.length === 0 && <EmptyState text="Crie um ciclo para começar." />}</div></div><div className="rounded-2xl bg-gradient-to-br from-[#1e3a6e] to-[#315da0] p-6 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-100/70">Próximo passo</p><h2 className="mt-3 text-xl font-bold">Dê contexto ao desenvolvimento.</h2><p className="mt-3 text-sm leading-6 text-blue-100/80">Comece criando um ciclo, registre um feedback ou transforme uma conversa em PDI.</p><div className="mt-6 flex flex-wrap gap-2"><button className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#7656bd]" onClick={() => onView("competency-journey")} type="button">Criar ciclo</button><button className="rounded-xl border border-white/30 px-3 py-2 text-xs font-bold text-white" onClick={() => onView("pdis")} type="button">Criar PDI</button></div></div></div></>;
 }
 
 function ModuleSection({ title, description, children }: { title: string; description: string; children: ReactNode }) { return <div><div className="mb-6"><h2 className="text-2xl font-extrabold">{title}</h2><p className="mt-1 text-sm text-slate-500">{description}</p></div>{children}</div>; }
