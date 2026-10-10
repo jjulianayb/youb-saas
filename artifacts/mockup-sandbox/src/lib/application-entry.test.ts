@@ -24,6 +24,7 @@ test("A — one product entry opens login, while authenticated routes stay inter
   assert.equal(resolveAppRoute("/").kind, "onboarding");
   assert.equal(resolveAppRoute("/preview/Onboarding").kind, "onboarding");
   assert.equal(resolveAppRoute("/preview/CommercialV1Demo").kind, "onboarding");
+  assert.deepEqual(resolveAppRoute("/preview/EmployeeHome"), { kind: "preview", componentPath: "EmployeeHome" });
   assert.equal(resolveAppRoute("/commercial").kind, "commercial");
   assert.equal(resolveAppRoute("/employee").kind, "employee");
   assert.equal(resolveOrganizationSelection([organization("one")])?.id, "one");

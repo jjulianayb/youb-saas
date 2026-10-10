@@ -10,8 +10,13 @@ import { getAppBasePath, resolveAppRoute } from "./lib/app-paths";
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 
 function resolveComponent(mod: Record<string, unknown>, name: string): ComponentType | undefined {
-  const functions = Object.values(mod).filter((value) => typeof value === "function") as ComponentType[];
-  return (mod.default as ComponentType) || (mod.Preview as ComponentType) || (mod[name] as ComponentType) || functions[functions.length - 1];
+  const namedPreview = mod[`${name}Preview`];
+  if (typeof namedPreview === "function") return namedPreview as ComponentType;
+  if (typeof mod.Preview === "function") return mod.Preview as ComponentType;
+  const exportedPreview = Object.entries(mod).find(([key, value]) => key.endsWith("Preview") && typeof value === "function")?.[1];
+  if (typeof exportedPreview === "function") return exportedPreview as ComponentType;
+  const component = (mod[name] ?? mod.default) as ComponentType | undefined;
+  return component && component.length === 0 ? component : undefined;
 }
 
 function PreviewRenderer({ componentPath, modules }: { componentPath: string; modules: ModuleMap }) {

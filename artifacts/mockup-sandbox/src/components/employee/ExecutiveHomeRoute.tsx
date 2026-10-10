@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import ExecutiveHome from "../mockups/ExecutiveHome";
 import EmployeeExperienceRoute from "./EmployeeExperienceRoute";
+import ProductAccountHeader from "../shared/ProductAccountHeader";
 import { getEmployeeExperienceContext, restoreSession, type EmployeeExperienceContext, type SupabaseSession } from "../../lib/supabase";
 import { handleBeeIntent, readBeeRuntime, type BeeIntent, type BeeRuntimeContext, type BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
 import { appPath } from "../../lib/app-paths";
@@ -21,7 +22,13 @@ export default function ExecutiveHomeRoute() {
   if (error || !organizationContext) return <PageMessage title="Contexto indisponível" detail={error ?? "Não foi possível identificar sua organização."} />;
   if (organizationContext.membership.role === "colaborador") return <EmployeeExperienceRoute />;
   if (!model || !runtimeContext) return <PageMessage title="Visão executiva indisponível" detail="Os contratos autorizados ainda não estão disponíveis. Tente novamente em instantes." />;
-  return <ExecutiveHome displayName={displayName(session, organizationContext)} organizationName={organizationContext.organization.name} runtimeContext={runtimeContext} model={model} onIntent={runIntent} beeResponse={beeResponse} />;
+  const name = displayName(session, organizationContext);
+  function logout(): void {
+    window.localStorage.removeItem("youb-session");
+    window.localStorage.removeItem("youb-organization");
+    window.location.href = appPath("/preview/Onboarding");
+  }
+  return <><ProductAccountHeader organizationName={organizationContext.organization.name} displayName={name} roleLabel="Diretoria" onLogout={logout} /><ExecutiveHome displayName={name} organizationName={organizationContext.organization.name} runtimeContext={runtimeContext} model={model} onIntent={runIntent} beeResponse={beeResponse} /></>;
 }
 
 export function executiveWelcome(role: EmployeeExperienceContext["membership"]["role"]): string { return welcomeRole(role); }

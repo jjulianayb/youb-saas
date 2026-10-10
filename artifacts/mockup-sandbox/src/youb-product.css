@@ -25,6 +25,19 @@
 .youb-account strong { color: var(--youb-ink); font-size: 11px; }
 .youb-account button { padding: 8px 13px; border: 1px solid var(--youb-line); border-radius: 8px; background: white; color: #514c58; font-size: 11px; font-weight: 700; cursor: pointer; }
 .youb-account button:hover { border-color: #c9bce2; background: var(--youb-lilac-soft); }
+.youb-role-topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+.youb-role-context { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.youb-role-context strong { overflow: hidden; color: var(--youb-ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.youb-role-context small { overflow: hidden; color: var(--youb-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.youb-role-logout { padding: 8px 13px; border: 1px solid var(--youb-line); border-radius: 8px; background: #fff; color: #514c58; font-size: 11px; font-weight: 700; cursor: pointer; }
+.youb-role-logout:hover { border-color: #c9bce2; background: var(--youb-lilac-soft); }
+.youb-role-hero { border: 1px solid var(--youb-line) !important; border-radius: 18px !important; background: var(--youb-lilac-soft) !important; color: var(--youb-ink) !important; box-shadow: none !important; }
+.youb-role-hero h1, .youb-role-hero h2, .youb-role-hero strong { color: var(--youb-ink); }
+.youb-role-hero [class~="text-primary-foreground/70"], .youb-role-hero [class~="text-primary-foreground/80"] { color: #655e6d !important; }
+.youb-employee-home article, .youb-executive-home article, .youb-employee-home section, .youb-executive-home section { border-color: var(--youb-line); }
+.youb-executive-home [class~="bg-blue-50"], .youb-employee-home [class~="bg-blue-50"] { background: var(--youb-lilac-soft); }
+.youb-executive-home [class~="border-blue-200"], .youb-employee-home [class~="border-blue-200"] { border-color: #e6def2; }
+.youb-executive-home [class~="text-blue-700"], .youb-employee-home [class~="text-blue-700"] { color: var(--youb-lilac-deep); }
 .youb-mobile-nav { display: none; }
 .youb-product-content { min-width: 0; padding: 26px 30px 48px; }
 .youb-page-heading { display: flex; max-width: 1240px; align-items: flex-end; justify-content: space-between; gap: 18px; margin: 0 auto 22px; padding: 0 0 18px; border-bottom: 1px solid var(--youb-line); }
@@ -59,6 +72,8 @@
 }
 @media (max-width: 760px) {
   .youb-app-topbar { min-height: 58px; grid-template-columns: 1fr auto; padding: 0 14px; }
+  .youb-role-topbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; }
+  .youb-role-context small { display: none; }
   .youb-brand { font-size: 29px; }
   .youb-desktop-nav { display: none; }
   .youb-account { gap: 8px; }
