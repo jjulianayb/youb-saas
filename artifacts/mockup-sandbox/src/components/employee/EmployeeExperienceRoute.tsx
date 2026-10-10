@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import EmployeeHome from "../mockups/EmployeeHome";
+import CompetencyCycleAssessment from "../mockups/CompetencyCycleAssessment";
 import ProductAccountHeader from "../shared/ProductAccountHeader";
+import RoleModuleNavigation, { type RoleModule } from "../shared/RoleModuleNavigation";
 import { getEmployeeExperienceContext, restoreSession, type EmployeeExperienceContext, type SupabaseSession } from "../../lib/supabase";
 import { readEmployeeHomeData } from "../../features/intelligence-core/service";
 import { appPath } from "../../lib/app-paths";
@@ -23,6 +25,7 @@ export default function EmployeeExperienceRoute() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Awaited<ReturnType<typeof readEmployeeHomeData>> | undefined>();
+  const [activeModule, setActiveModule] = useState<RoleModule>("home");
 
   useEffect(() => {
     void safeSession().then((session) => {
@@ -48,7 +51,17 @@ export default function EmployeeExperienceRoute() {
     data,
     beeContext: { userName: name, organizationName: state.context.organization.name, role: state.context.membership.role, capabilities: state.context.capabilities, employeeLinked: Boolean(state.context.employeeId), screen: "employee-home" },
   };
-  return <><ProductAccountHeader organizationName={state.context.organization.name} displayName={name} roleLabel="Colaborador" onLogout={logout} /><EmployeeHome context={context} /></>;
+  return <>
+    <ProductAccountHeader organizationName={state.context.organization.name} displayName={name} roleLabel="Colaborador" onLogout={logout} />
+    <RoleModuleNavigation activeModule={activeModule} onChange={setActiveModule} />
+    {activeModule === "competency-cycle" ? (
+      <main className="min-h-screen bg-background px-5 py-8 text-foreground sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <CompetencyCycleAssessment session={state.session} organization={{ id: state.context.organization.id }} role={state.context.membership.role} employeeId={state.context.employeeId} />
+        </div>
+      </main>
+    ) : <EmployeeHome context={context} />}
+  </>;
 }
 
 function RouteMessage({ title, detail }: { title: string; detail: string }) {
