@@ -21,7 +21,7 @@ type Mode = "login" | "signup";
 type Step = "access" | "organization" | "organization-select" | "done";
 
 const inputClassName =
-  "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
+  "mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-100";
 
 function friendlyError(error: unknown): string {
   if (!(error instanceof Error)) return "Não foi possível concluir agora. Tente novamente.";
@@ -170,24 +170,24 @@ export default function Onboarding() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f8fc] px-5 py-10 text-slate-900 sm:px-8">
+    <main className="youb-onboarding min-h-screen bg-white px-5 py-6 text-slate-900 sm:px-8">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl items-center justify-center">
-        <section className="grid w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_70px_rgba(30,58,110,0.12)] lg:grid-cols-[0.9fr_1.1fr]">
-          <aside className="relative overflow-hidden bg-gradient-to-br from-[#102654] via-[#1e3a6e] to-[#315da0] p-8 text-white sm:p-12">
-            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
+        <section className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:grid-cols-[0.9fr_1.1fr]">
+          <aside className="relative overflow-hidden bg-[#f6f3fa] p-8 text-slate-900 sm:p-12">
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-violet-100/70" />
             <div className="relative">
               <div className="mb-16 flex items-baseline gap-1">
-                <span className="text-3xl font-light tracking-tight text-white/80">you</span>
-                <span className="text-4xl font-extrabold tracking-tight">B</span>
+                <span className="text-3xl font-light tracking-tight text-[#27242d]">you</span>
+                <span className="youb-brand-b text-4xl font-extrabold tracking-tight text-[#7656bd]">B</span>
               </div>
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-blue-100/70">Gestão de pessoas</p>
+              <p className="youb-accent mb-3 text-xs font-bold uppercase tracking-[0.2em] text-violet-700">Gestão de pessoas</p>
               <h1 className="max-w-sm text-3xl font-extrabold leading-tight sm:text-4xl">
                 Comece a transformar o desenvolvimento da sua equipe.
               </h1>
-              <p className="mt-5 max-w-sm text-sm leading-7 text-blue-100/80">
+              <p className="mt-5 max-w-sm text-sm leading-7 text-slate-600">
                 Um espaço seguro para avaliações, feedbacks, PDIs e decisões melhores sobre pessoas.
               </p>
-              <div className="mt-12 space-y-4 text-sm text-blue-50/90">
+              <div className="mt-12 space-y-4 text-sm text-slate-600">
                 <p>✓ Estrutura por empresa desde o primeiro acesso</p>
                 <p>✓ Dados isolados com segurança</p>
                 <p>✓ Onboarding simples e sem planilhas</p>
@@ -198,7 +198,7 @@ export default function Onboarding() {
           <div className="p-7 sm:p-12">
             <div className="mb-8 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Primeiro acesso</p>
+                <p className="youb-accent text-xs font-bold uppercase tracking-[0.16em] text-violet-700">Primeiro acesso</p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">
                   {step === "access" && (mode === "login" ? "Entre na sua conta" : "Crie sua conta")}
                   {step === "organization" && "Configure sua empresa"}
@@ -206,7 +206,7 @@ export default function Onboarding() {
                   {step === "done" && "Tudo pronto"}
                 </h2>
               </div>
-              <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              <div className="youb-soft-badge rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-800">
                 {step === "access" ? "1 de 2" : step === "organization-select" ? "Seleção" : step === "organization" ? "2 de 2" : "Concluído"}
               </div>
             </div>
@@ -236,12 +236,12 @@ export default function Onboarding() {
                   Senha
                   <input className={inputClassName} type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" required />
                 </label>
-                <button className="w-full rounded-xl bg-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#152c57] disabled:cursor-not-allowed disabled:opacity-50" disabled={!isSupabaseConfigured || submitting} type="submit">
+                <button className="youb-primary-action w-full rounded-lg bg-[#7656bd] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#60439f] disabled:cursor-not-allowed disabled:opacity-50" disabled={!isSupabaseConfigured || submitting} type="submit">
                   {submitting ? "Aguarde..." : mode === "login" ? "Entrar na youB" : "Criar minha conta"}
                 </button>
                 <p className="text-center text-sm text-slate-500">
                   {mode === "login" ? "Ainda não tem uma conta?" : "Já tem uma conta?"}{" "}
-                  <button className="font-bold text-blue-700 hover:underline" type="button" onClick={() => { resetFeedback(); setMode(mode === "login" ? "signup" : "login"); }}>
+                  <button className="youb-accent font-bold text-violet-700 hover:underline" type="button" onClick={() => { resetFeedback(); setMode(mode === "login" ? "signup" : "login"); }}>
                     {mode === "login" ? "Criar agora" : "Entrar"}
                   </button>
                 </p>
@@ -252,7 +252,7 @@ export default function Onboarding() {
               <form className="space-y-5" onSubmit={handleOrganizationSelect}>
                 <p className="text-sm leading-7 text-slate-500">Seu acesso pertence a mais de uma empresa. Escolha qual espaço deseja abrir agora.</p>
                 <label className="block text-sm font-semibold text-slate-700">Empresa<select className={inputClassName} value={selectedOrganizationId} onChange={(event) => setSelectedOrganizationId(event.target.value)} required><option value="">Selecione</option>{organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-                <button className="w-full rounded-xl bg-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#152c57]" type="submit">Abrir empresa</button>
+                <button className="youb-primary-action w-full rounded-lg bg-[#7656bd] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#60439f]" type="submit">Abrir empresa</button>
               </form>
             )}
 
@@ -263,7 +263,7 @@ export default function Onboarding() {
                   Nome da empresa
                   <input className={inputClassName} value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} placeholder="Ex.: youB Tecnologia" required />
                 </label>
-                <button className="w-full rounded-xl bg-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#152c57] disabled:cursor-not-allowed disabled:opacity-50" disabled={submitting} type="submit">
+                <button className="youb-primary-action w-full rounded-lg bg-[#7656bd] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#60439f] disabled:cursor-not-allowed disabled:opacity-50" disabled={submitting} type="submit">
                   {submitting ? "Criando espaço..." : "Criar espaço da empresa"}
                 </button>
               </form>
@@ -280,7 +280,7 @@ export default function Onboarding() {
                   Identificador do espaço: <strong className="text-slate-900">{organization.slug}</strong>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel inicial</p>
+                  <p className="youb-accent text-xs font-bold uppercase tracking-[0.16em] text-violet-700">Painel inicial</p>
                   <p className="mt-2 text-sm leading-6 text-slate-500">A estrutura da sua empresa está pronta. Os próximos módulos serão ativados aqui.</p>
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {["Avaliações", "Feedbacks", "PDIs", "Ciclos"].map((item) => (
@@ -288,8 +288,8 @@ export default function Onboarding() {
                     ))}
                   </div>
                 </div>
-                <button className="w-full rounded-xl border border-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-[#1e3a6e] transition hover:bg-blue-50" type="button" onClick={() => { window.localStorage.removeItem("youb-session"); window.localStorage.removeItem("youb-organization"); setSession(null); setOrganization(null); setStep("access"); setPassword(""); }}>
-                  Sair da demonstração
+                <button className="w-full rounded-xl border border-[#7656bd] px-5 py-3.5 text-sm font-bold text-[#60439f] transition hover:bg-violet-50" type="button" onClick={() => { window.localStorage.removeItem("youb-session"); window.localStorage.removeItem("youb-organization"); setSession(null); setOrganization(null); setStep("access"); setPassword(""); }}>
+                  Sair da youB
                 </button>
               </div>
             )}

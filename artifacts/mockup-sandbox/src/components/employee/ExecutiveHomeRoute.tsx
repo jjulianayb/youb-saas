@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import ExecutiveHome from "../mockups/ExecutiveHome";
+import CompetencyCycleAssessment from "../mockups/CompetencyCycleAssessment";
 import EmployeeExperienceRoute from "./EmployeeExperienceRoute";
+import ProductAccountHeader from "../shared/ProductAccountHeader";
+import RoleModuleNavigation, { type RoleModule } from "../shared/RoleModuleNavigation";
 import { getEmployeeExperienceContext, restoreSession, type EmployeeExperienceContext, type SupabaseSession } from "../../lib/supabase";
 import { handleBeeIntent, readBeeRuntime, type BeeIntent, type BeeRuntimeContext, type BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
 import { appPath } from "../../lib/app-paths";
@@ -12,7 +15,7 @@ function welcomeRole(role: EmployeeExperienceContext["membership"]["role"]): str
 function PageMessage({ title, detail, action }: { title: string; detail: string; action?: ReactNode }) { return <main className="flex min-h-screen items-center justify-center bg-background px-5 text-foreground"><section className="max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-sm"><h1 className="text-xl font-bold">{title}</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail}</p>{action}</section></main>; }
 
 export default function ExecutiveHomeRoute() {
-  const [session, setSession] = useState<SupabaseSession | null>(null); const [organizationContext, setOrganizationContext] = useState<EmployeeExperienceContext | null>(null); const [model, setModel] = useState<BeeRuntimeReadModel | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [beeResponse, setBeeResponse] = useState<string | null>(null);
+  const [session, setSession] = useState<SupabaseSession | null>(null); const [organizationContext, setOrganizationContext] = useState<EmployeeExperienceContext | null>(null); const [model, setModel] = useState<BeeRuntimeReadModel | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [beeResponse, setBeeResponse] = useState<string | null>(null); const [activeModule, setActiveModule] = useState<RoleModule>("home");
   useEffect(() => { let cancelled = false; void safeSession().then((savedSession) => { if (!savedSession) { setLoading(false); return; } const rawOrganization = window.localStorage.getItem("youb-organization"); const organizationId = rawOrganization ? (JSON.parse(rawOrganization) as { id?: string }).id : undefined; return getEmployeeExperienceContext(savedSession, organizationId).then(async (context) => { if (cancelled || !context) { if (!cancelled) setError("O contexto autenticado ainda não foi carregado."); return; } setSession(savedSession); setOrganizationContext(context); if (context.membership.role === "colaborador") return; try { const runtimeContext = buildRuntimeContext(savedSession, context); const runtimeModel = await readBeeRuntime(runtimeContext); if (!cancelled) setModel(runtimeModel); } catch { if (!cancelled) setError("Não foi possível carregar a visão executiva agora."); } }).catch(() => { if (!cancelled) setError("Não foi possível carregar o contexto da organização."); }).finally(() => { if (!cancelled) setLoading(false); }); }).catch(() => { if (!cancelled) { setError("Não foi possível restaurar sua sessão."); setLoading(false); } }); return () => { cancelled = true; }; }, []);
   const runtimeContext = useMemo(() => session && organizationContext ? buildRuntimeContext(session, organizationContext) : null, [session, organizationContext]);
   function runIntent(intent: BeeIntent) { if (!model) return; const result = handleBeeIntent(model, intent); if (intent === "attention_today") setBeeResponse(result.attention?.length ? `${result.attention.length} prioridade(s) com contexto disponível. Abra um card para ver a explicação.` : "Nenhum item exige atenção especial agora."); else if (intent === "list_open_readings") setBeeResponse(result.readings?.length ? `${result.readings.length} Leitura(s) Organizacional(is) aberta(s).` : "Nenhuma Leitura Organizacional aberta no momento."); else if (intent === "list_unknowns") setBeeResponse(result.unknowns?.length ? `${result.unknowns.length} ponto(s) ainda precisam de investigação.` : "Não há unknowns registrados neste contexto."); else if (intent === "list_actions") setBeeResponse(result.actions?.length ? `${result.actions.length} Action(s) autorizada(s) estão disponíveis.` : "Nenhuma Action disponível neste contexto."); }
@@ -20,8 +23,24 @@ export default function ExecutiveHomeRoute() {
   if (!session) return <PageMessage title="Acesse sua conta" detail="Entre na youB para visualizar sua Home executiva." action={<a className="mt-5 inline-flex rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground" href={appPath("/preview/Onboarding")}>Abrir acesso</a>} />;
   if (error || !organizationContext) return <PageMessage title="Contexto indisponível" detail={error ?? "Não foi possível identificar sua organização."} />;
   if (organizationContext.membership.role === "colaborador") return <EmployeeExperienceRoute />;
+  const name = displayName(session, organizationContext);
+  function logout(): void {
+    window.localStorage.removeItem("youb-session");
+    window.localStorage.removeItem("youb-organization");
+    window.location.href = appPath("/preview/Onboarding");
+  }
+  const roleLabel = ({ admin_youb: "Administrador", diretoria: "Diretoria", rh: "RH", gestor: "Gestor", colaborador: "Colaborador" } as Record<EmployeeExperienceContext["membership"]["role"], string>)[organizationContext.membership.role];
+  if (activeModule === "competency-cycle") return <>
+    <ProductAccountHeader organizationName={organizationContext.organization.name} displayName={name} roleLabel={roleLabel} onLogout={logout} />
+    <RoleModuleNavigation activeModule={activeModule} onChange={setActiveModule} />
+    <main className="min-h-screen bg-background px-5 py-8 text-foreground sm:px-8"><div className="mx-auto max-w-7xl"><CompetencyCycleAssessment session={session} organization={{ id: organizationContext.organization.id }} role={organizationContext.membership.role} employeeId={organizationContext.employeeId} /></div></main>
+  </>;
   if (!model || !runtimeContext) return <PageMessage title="Visão executiva indisponível" detail="Os contratos autorizados ainda não estão disponíveis. Tente novamente em instantes." />;
-  return <ExecutiveHome displayName={displayName(session, organizationContext)} organizationName={organizationContext.organization.name} runtimeContext={runtimeContext} model={model} onIntent={runIntent} beeResponse={beeResponse} />;
+  return <>
+    <ProductAccountHeader organizationName={organizationContext.organization.name} displayName={name} roleLabel={roleLabel} onLogout={logout} />
+    <RoleModuleNavigation activeModule={activeModule} onChange={setActiveModule} />
+    <ExecutiveHome displayName={name} organizationName={organizationContext.organization.name} runtimeContext={runtimeContext} model={model} onIntent={runIntent} beeResponse={beeResponse} />
+  </>;
 }
 
 export function executiveWelcome(role: EmployeeExperienceContext["membership"]["role"]): string { return welcomeRole(role); }

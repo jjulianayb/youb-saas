@@ -1,0 +1,92 @@
+:root {
+  --youb-ink: #27242d;
+  --youb-muted: #74707c;
+  --youb-lilac: #7656bd;
+  --youb-lilac-deep: #60439f;
+  --youb-lilac-soft: #f5f2fa;
+  --youb-yellow: #edca61;
+  --youb-line: #e8e5ec;
+}
+
+.youb-app-shell { min-height: 100vh; color: var(--youb-ink); background: #fff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.youb-app-topbar { position: sticky; top: 0; z-index: 40; display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; align-items: center; gap: 18px; min-height: 72px; padding: 0 28px; border-bottom: 1px solid var(--youb-line); background: rgba(255,255,255,.97); }
+.youb-brand { display: flex; align-items: baseline; gap: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 34px; font-weight: 700; letter-spacing: -.09em; }
+.youb-brand span { color: var(--youb-ink); }
+.youb-brand b { color: var(--youb-lilac); font-weight: 750; }
+.youb-desktop-nav { display: flex; min-width: 0; align-items: stretch; justify-content: center; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.youb-desktop-nav::-webkit-scrollbar { display: none; }
+.youb-desktop-nav button { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 72px; padding: 0 9px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #68636f; font-size: 11px; font-weight: 650; white-space: nowrap; cursor: pointer; }
+.youb-desktop-nav button span { color: #8a70c2; }
+.youb-desktop-nav button:hover, .youb-desktop-nav button.active { color: var(--youb-lilac-deep); }
+.youb-desktop-nav button.active { border-bottom-color: var(--youb-lilac); }
+.youb-account { display: flex; align-items: center; gap: 14px; }
+.youb-account > span { display: flex; max-width: 180px; flex-direction: column; gap: 3px; }
+.youb-account small { overflow: hidden; color: var(--youb-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.youb-account strong { color: var(--youb-ink); font-size: 11px; }
+.youb-account button { padding: 8px 13px; border: 1px solid var(--youb-line); border-radius: 8px; background: white; color: #514c58; font-size: 11px; font-weight: 700; cursor: pointer; }
+.youb-account button:hover { border-color: #c9bce2; background: var(--youb-lilac-soft); }
+.youb-role-topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+.youb-role-context { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.youb-role-context strong { overflow: hidden; color: var(--youb-ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.youb-role-context small { overflow: hidden; color: var(--youb-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.youb-role-logout { padding: 8px 13px; border: 1px solid var(--youb-line); border-radius: 8px; background: #fff; color: #514c58; font-size: 11px; font-weight: 700; cursor: pointer; }
+.youb-role-logout:hover { border-color: #c9bce2; background: var(--youb-lilac-soft); }
+.youb-role-hero { border: 1px solid var(--youb-line) !important; border-radius: 18px !important; background: var(--youb-lilac-soft) !important; color: var(--youb-ink) !important; box-shadow: none !important; }
+.youb-role-hero h1, .youb-role-hero h2, .youb-role-hero strong { color: var(--youb-ink); }
+.youb-role-hero [class~="text-primary-foreground/70"], .youb-role-hero [class~="text-primary-foreground/80"] { color: #655e6d !important; }
+.youb-employee-home article, .youb-executive-home article, .youb-employee-home section, .youb-executive-home section { border-color: var(--youb-line); }
+.youb-executive-home [class~="bg-blue-50"], .youb-employee-home [class~="bg-blue-50"] { background: var(--youb-lilac-soft); }
+.youb-executive-home [class~="border-blue-200"], .youb-employee-home [class~="border-blue-200"] { border-color: #e6def2; }
+.youb-executive-home [class~="text-blue-700"], .youb-employee-home [class~="text-blue-700"] { color: var(--youb-lilac-deep); }
+.youb-mobile-nav { display: none; }
+.youb-product-content { min-width: 0; padding: 26px 30px 48px; }
+.youb-page-heading { display: flex; max-width: 1240px; align-items: flex-end; justify-content: space-between; gap: 18px; margin: 0 auto 22px; padding: 0 0 18px; border-bottom: 1px solid var(--youb-line); }
+.youb-page-heading p { margin: 0; color: var(--youb-lilac-deep); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.youb-page-heading h1 { margin: 6px 0 0; color: var(--youb-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(25px, 3vw, 34px); font-weight: 650; letter-spacing: -.035em; line-height: 1.1; }
+.youb-page-heading span { display: block; margin-top: 6px; color: var(--youb-muted); font-size: 13px; line-height: 1.5; }
+.youb-page-context { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+.youb-page-context strong { font-size: 12px; }
+.youb-page-context small { color: var(--youb-muted); font-size: 10px; }
+.youb-page-body { max-width: 1240px; margin: 0 auto; }
+.youb-app-shell [class~="bg-blue-50/60"], .youb-app-shell [class~="bg-blue-50/50"] { background: var(--youb-lilac-soft); }
+.youb-app-shell [class~="border-blue-100"] { border-color: #e6def2; }
+.youb-app-shell [class~="text-blue-600"], .youb-app-shell [class~="text-blue-700"] { color: var(--youb-lilac-deep); }
+.youb-app-shell [class~="bg-blue-500"], .youb-app-shell [class~="bg-blue-600"] { background-color: var(--youb-lilac); }
+.youb-app-shell [class~="text-[#1e3a6e]"] { color: var(--youb-lilac-deep); }
+.youb-onboarding { background: #fff !important; }
+.youb-onboarding > div > section { border-color: var(--youb-line) !important; box-shadow: 0 18px 54px rgba(39,36,45,.08) !important; }
+.youb-onboarding aside { background: #f6f3fa !important; color: var(--youb-ink) !important; }
+.youb-onboarding aside h1 { color: var(--youb-ink) !important; }
+.youb-onboarding aside p, .youb-onboarding aside div { color: #625d69; }
+.youb-onboarding aside .youb-brand-b { color: var(--youb-lilac) !important; }
+.youb-onboarding .youb-accent { color: var(--youb-lilac-deep) !important; }
+.youb-onboarding .youb-primary-action { background: var(--youb-lilac) !important; }
+.youb-onboarding .youb-primary-action:hover { background: var(--youb-lilac-deep) !important; }
+.youb-onboarding .youb-soft-badge { background: var(--youb-lilac-soft) !important; color: var(--youb-lilac-deep) !important; }
+.youb-onboarding input:focus, .youb-onboarding select:focus { border-color: var(--youb-lilac) !important; --tw-ring-color: #ede6f8 !important; }
+@media (max-width: 1050px) {
+  .youb-app-topbar { grid-template-columns: 115px minmax(0,1fr) auto; gap: 8px; padding: 0 16px; }
+  .youb-brand { font-size: 30px; }
+  .youb-desktop-nav button { gap: 4px; padding: 0 6px; font-size: 10px; }
+  .youb-account > span { display: none; }
+}
+@media (max-width: 760px) {
+  .youb-app-topbar { min-height: 58px; grid-template-columns: 1fr auto; padding: 0 14px; }
+  .youb-role-topbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; }
+  .youb-role-context small { display: none; }
+  .youb-brand { font-size: 29px; }
+  .youb-desktop-nav { display: none; }
+  .youb-account { gap: 8px; }
+  .youb-account button { padding: 7px 10px; }
+  .youb-mobile-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 45; display: flex; height: calc(68px + env(safe-area-inset-bottom, 0px)); align-items: stretch; gap: 2px; overflow-x: auto; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--youb-line); background: rgba(255,255,255,.98); scrollbar-width: thin; }
+  .youb-mobile-nav button { display: flex; min-width: 72px; flex: 0 0 auto; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 2px 6px; border: 0; border-radius: 8px; background: transparent; color: #746f7b; font-size: 15px; cursor: pointer; }
+  .youb-mobile-nav button small { max-width: 72px; overflow: hidden; font-size: 8px; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+  .youb-mobile-nav button.active { background: var(--youb-lilac-soft); color: var(--youb-lilac-deep); }
+  .youb-product-content { padding: 18px 14px calc(86px + env(safe-area-inset-bottom, 0px)); }
+  .youb-page-heading { align-items: flex-start; margin-bottom: 16px; padding-bottom: 14px; }
+  .youb-page-heading h1 { font-size: 25px; }
+  .youb-page-heading span { font-size: 12px; }
+  .youb-page-context { display: none; }
+  .youb-onboarding > div { min-height: calc(100vh - 3rem) !important; }
+}
+@media (prefers-reduced-motion: reduce) { .youb-app-shell *, .youb-onboarding * { scroll-behavior: auto !important; transition-duration: .01ms !important; } }

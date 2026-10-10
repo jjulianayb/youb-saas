@@ -1,4 +1,4 @@
-import type { SupabaseSession } from "../../lib/supabase";
+import { authenticatedFetch, type SupabaseSession } from "../../lib/supabase";
 
 export type Feedback360Role = "admin_youb" | "rh" | "diretoria" | "gestor" | "colaborador";
 export type Feedback360Round = { id: string; cycle_id: string; name: string; description?: string | null; confidentiality_mode: "confidential"; status: "draft" | "active" | "closed"; activated_at?: string | null; closed_at?: string | null };
@@ -15,7 +15,7 @@ const baseUrl = ((import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? ""
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 function config() { if (!baseUrl || !anonKey) throw new Error("O ambiente ainda não está conectado ao Supabase."); return { baseUrl, anonKey }; }
 function enc(value: string): string { return encodeURIComponent(value); }
-async function request<T>(session: SupabaseSession, path: string, options: RequestInit = {}): Promise<T> { const c = config(); const response = await fetch(`${c.baseUrl}/rest/v1/${path}`, { ...options, headers: { apikey: c.anonKey, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json", ...(options.headers ?? {}) } }); const body = await response.json().catch(() => null); if (!response.ok) throw new Error((body && typeof body === "object" && ((body as { message?: string }).message || (body as { details?: string }).details)) || "Não foi possível concluir a operação."); return body as T; }
+async function request<T>(session: SupabaseSession, path: string, options: RequestInit = {}): Promise<T> { const c = config(); const response = await authenticatedFetch(session, `${c.baseUrl}/rest/v1/${path}`, { ...options, headers: { apikey: c.anonKey, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json", ...(options.headers ?? {}) } }); const body = await response.json().catch(() => null); if (!response.ok) throw new Error((body && typeof body === "object" && ((body as { message?: string }).message || (body as { details?: string }).details)) || "Não foi possível concluir a operação."); return body as T; }
 export async function rpc<T>(session: SupabaseSession, name: string, payload: Record<string, unknown>): Promise<T> { return request<T>(session, `rpc/${name}`, { method: "POST", body: JSON.stringify(payload) }); }
 export async function readRounds(session: SupabaseSession, organizationId: string): Promise<Feedback360Round[]> { return request<Feedback360Round[]>(session, `feedback_360_rounds?select=id,cycle_id,name,description,confidentiality_mode,status,activated_at,closed_at&organization_id=eq.${enc(organizationId)}&order=created_at.desc`); }
 export async function readCycles(session: SupabaseSession, organizationId: string): Promise<Feedback360Cycle[]> { return request<Feedback360Cycle[]>(session, `cycles?select=id,name,status&organization_id=eq.${enc(organizationId)}&order=created_at.desc`); }
